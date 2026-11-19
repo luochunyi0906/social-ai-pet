@@ -78,21 +78,28 @@ function update(data,p,now=Date.now()){
  throw Error('无效收藏操作。');
 }
 function act(data,p,now=Date.now()){
- const s=advance(data,now);if(!p||typeof p.id!=='string'||!/^[a-zA-Z0-9-]{8,80}$/.test(p.id)||!['plant','water','fertilize'].includes(p.action))throw Error('花园操作无效。');
+ const s=advance(data,now);if(!p||typeof p.id!=='string'||!/^[a-zA-Z0-9-]{8,80}$/.test(p.id)||!['plant','water','fertilize','harvest'].includes(p.action))throw Error('花园操作无效。');
  const signature=createHash('sha256').update(JSON.stringify([p.action,p.favoriteId??null,p.plantId??null,p.slot??null])).digest('hex');const old=s.operations.find(x=>x.id===p.id);
  if(old){if(old.signature!==signature)throw Error('操作标识重复，请重新操作。');return s;}
  let next;
  if(p.action==='plant'){
   const f=s.favorites.find(f=>f.id===p.favoriteId);if(!f)throw Error('这颗种子已不存在。');if(s.plants.some(x=>x.favoriteId===f.id))throw Error('这颗种子已经播种。');if(!Number.isInteger(p.slot)||p.slot<0||p.slot>8||s.plants.some(x=>x.slot===p.slot))throw Error('土地已被占用，请重新选择。');
   const time=stamp(now),variety=availableVariety(new Set(s.plants.map(x=>x.variety)),f.id);
-  next={...s,favorites:s.favorites.map(x=>x.id===f.id?{...x,slot:p.slot}:x),plants:[...s.plants,{id:'plant:'+f.id,favoriteId:f.id,slot:p.slot,variety,stage:'planted',water:20,nutrients:10,growth:0,plantedAt:time,updatedAt:time,wateredAt:null,fertilizedAt:null,legacy:false}]};
+  next={...s,favorites:s.favorites.map(x=>x.id===f.id?{...x,slot:p.slot}:x),plants:[...s.plants,{id:'plant:'+f.id+':'+p.id,favoriteId:f.id,slot:p.slot,variety,stage:'planted',water:20,nutrients:10,growth:0,plantedAt:time,updatedAt:time,wateredAt:null,fertilizedAt:null,legacy:false}]};
  }else{
   const plant=s.plants.find(x=>x.id===p.plantId);if(!plant)throw Error('植物已不存在，请重新打开花园。');
-  const key=p.action==='water'?'water':'nutrients',timeKey=p.action==='water'?'wateredAt':'fertilizedAt';
-  if(plant[key]>=80)throw Error(p.action==='water'?'水分充足，暂时不用再浇水。':'养分充足，暂时不用再施肥。');
-  const changed={...plant,[key]:100,[timeKey]:stamp(now)};
-  if(changed.wateredAt!==null&&changed.fertilizedAt!==null)changed.growth=Math.max(changed.growth,25);
-  changed.stage=stageFor(changed.growth);next={...s,plants:s.plants.map(x=>x.id===changed.id?changed:x)};
+  if(p.action==='harvest'){
+   if(plant.stage!=='flower')throw Error('还没成熟，等它开花后再采种。');
+   next={...s,
+    favorites:s.favorites.map(f=>f.id===plant.favoriteId?{...f,slot:null}:f),
+    plants:s.plants.filter(x=>x.id!==plant.id)};
+  }else{
+   const key=p.action==='water'?'water':'nutrients',timeKey=p.action==='water'?'wateredAt':'fertilizedAt';
+   if(plant[key]>=80)throw Error(p.action==='water'?'水分充足，暂时不用再浇水。':'养分充足，暂时不用再施肥。');
+   const changed={...plant,[key]:100,[timeKey]:stamp(now)};
+   if(changed.wateredAt!==null&&changed.fertilizedAt!==null)changed.growth=Math.max(changed.growth,25);
+   changed.stage=stageFor(changed.growth);next={...s,plants:s.plants.map(x=>x.id===changed.id?changed:x)};
+  }
  }
  return validate({...next,revision:s.revision+1,operations:[...s.operations,{id:p.id,signature}].slice(-100)});
 }
