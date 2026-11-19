@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
@@ -40,12 +41,13 @@ export async function run() {
   async function launch() {
     app = await electron.launch({executablePath, env:{...process.env,KANSHAN_DATA_DIR:profile,MODEL_API_KEY:'fixture-only',MODEL_PROVIDER:'openai-compatible',MODEL_NAME:'fixture',ZHIHU_ACCESS_SECRET:''}, timeout:20000});
     page = await app.firstWindow();
+    await skipGuide(page);
     page.setDefaultTimeout(7500);
     await page.locator('.desktop-pet').waitFor();
     await page.waitForFunction(async () => (await window.kanshan.load()).ok);
   }
   const button = (name) => page.getByRole('button', {name,exact:true});
-  const fromDesktop = () => page.locator('.pet-fox .fox-nose').click();
+  const fromDesktop = () => page.locator('.pet-fox .fox-nose').dblclick();
   const area = () => app.evaluate(({screen}) => screen.getPrimaryDisplay().workArea);
   async function pointFor(selector) {
     const box = await page.locator(selector).boundingBox();
@@ -488,7 +490,7 @@ export async function run() {
     await assertVisible('.camp-sheet','A2 · 幼苗');
     await page.screenshot({path:join(artifacts,'native-camp-after-care.png')});
     mark('选种、取消、确认、选择工具点田、空田反馈及手账返回');
-    await button('和刘看山聊聊').click();
+    await button('和刘看山互动，可双击打开聊天').dblclick();
     await page.locator('.chat-modal textarea').fill('你好，营地');
     await page.locator('.chat-modal .consent input').check();
     await button('发送').click();

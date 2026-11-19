@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -19,6 +20,7 @@ async function start(){
   env:{...process.env,KANSHAN_DATA_DIR:profile},timeout:20000
  });
  page=await app.firstWindow();
+ await skipGuide(page);
  page.setDefaultTimeout(8000);
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.locator('.desktop-pet').waitFor();
@@ -31,12 +33,12 @@ async function visit(){
  const cave=page.locator('.pet-cave .pet-caption');
  await cave.click();
  assert.equal(await video().count(),0);
- await cave.click();
+ await button('山洞入口').click();
  await video().waitFor();
 }
 async function showPicker(){
- await page.locator('.pet-fox .fox-nose').click();
- await button('和刘看山聊聊').click();
+ await page.locator('.pet-fox .fox-nose').dblclick();
+ await button('和刘看山互动，可双击打开聊天').dblclick();
  await button('刘看山的表情').click();
  await picker().waitFor();
 }
@@ -66,7 +68,13 @@ try{
  assert.deepEqual(await status(),{ok:true,data:false});
  await page.keyboard.press('Escape');
  await visit();
- await page.waitForFunction(()=>document.querySelector('.cave-reveal video')?.currentTime>3);
+ try {
+  await page.waitForFunction(()=>document.querySelector('.cave-reveal video')?.currentTime>3);
+ } catch (error) {
+  const state=await video().evaluate(node=>({time:node.currentTime,paused:node.paused,
+   readyState:node.readyState,error:node.error?.message})).catch(()=>null);
+  throw new Error('山洞视频未播放到赠礼时间 '+JSON.stringify(state),{cause:error});
+ }
  assert.deepEqual(await status(),{ok:true,data:true});
  await button('离开').click();
  const notice=page.locator('.cave-gift-notice');

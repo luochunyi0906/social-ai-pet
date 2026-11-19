@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -17,6 +18,7 @@ const status = () => page.evaluate(async () => (await window.kanshan.wardrobeSta
 async function start() {
  app = await electron.launch({ executablePath, env: { ...process.env, KANSHAN_DATA_DIR: profile } });
  page = await app.firstWindow();
+ await skipGuide(page);
  await page.emulateMedia({ reducedMotion: 'reduce' });
  await page.locator('.desktop-pet').waitFor();
 }
@@ -54,7 +56,7 @@ try {
  await button('收回桌面').click();
  const entrance = page.locator('.pet-cave .pet-caption');
  await entrance.click();
- await entrance.click();
+ await page.getByRole('button',{name:'山洞入口',exact:true}).click();
  await page.waitForFunction(() => document.querySelector('.cave-reveal video')?.currentTime > 3);
  await button('离开').click();
  await page.locator('.cave-gift-notice').waitFor();

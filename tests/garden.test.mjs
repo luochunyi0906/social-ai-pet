@@ -88,3 +88,22 @@ test('播种照料与成长事件进入唯一控制器，暂停和低打扰始�
  const mapping={'seed-select':'seedlook',plant:'plant',water:'water',fertilize:'fertilize','garden-stage':'gardenlook',bloom:'bloom'};
  for(const[kind,expected]of Object.entries(mapping)){assert.equal(nextBehavior(INITIAL_STATE,0,false,'idle',kind).action,expected);assert.equal(nextBehavior({...INITIAL_STATE,paused:true},0,false,'idle',kind).action,'paused');assert.equal(nextBehavior(INITIAL_STATE,0,true,'idle',kind).action,'rest');}assert.equal(nextBehavior(INITIAL_STATE,0,false,'idle','keep').reason.includes('种子'),true);
 });
+
+test('手套只采成熟植株，种子回箱，同一操作重试安全，旧植株 ID 不能操作补种',()=>{
+ const garden = add(farm.empty(), 100);
+ const favorite = garden.favorites[0];
+ let planted = action(garden,'plant',1,{favoriteId:favorite.id,slot:2});
+ const plantId = planted.plants[0].id;
+ const request = {id:'harvest-first-plant',action:'harvest',plantId};
+ assert.throws(()=>farm.act(planted,request,t+150),/还没成熟/);
+ planted = action(planted,'water',2,{plantId});
+ planted = action(planted,'fertilize',3,{plantId});
+ const mature = t + 400000;
+ const picked = farm.act(planted,request,mature);
+ assert.equal(picked.plants.length,0);
+ assert.deepEqual(picked.favorites,[favorite]);
+ assert.deepEqual(farm.act(picked,request,mature),picked);
+ const replanted = farm.act(picked,{id:'plant-second-time',action:'plant',favoriteId:favorite.id,slot:2},mature);
+ assert.notEqual(replanted.plants[0].id,plantId);
+ assert.throws(()=>farm.act(replanted,{...request,id:'harvest-stale-id'},mature),/植物已不存在/);
+});

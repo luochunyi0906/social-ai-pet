@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
@@ -31,6 +32,7 @@ async function launch(){
  app=await electron.launch({executablePath:resolve(root,process.env.KANSHAN_PACKAGE_DIR||'release','看山有伴.app/Contents/MacOS/Kanshan'),
   env:{...process.env,KANSHAN_DATA_DIR:profile},timeout:25000});
  page=await app.firstWindow();
+ await skipGuide(page);
  page.setDefaultTimeout(live?120000:10000);
  await page.locator('.desktop-pet').waitFor();
  await menu('和刘看山聊聊');

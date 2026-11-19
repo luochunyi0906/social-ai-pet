@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,writeFile,readFile,mkdir,rm} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
@@ -44,7 +45,8 @@ async function launch(){
    return response;
   };
  });
- page=await app.firstWindow();page.setDefaultTimeout(12000);
+ page=await app.firstWindow();
+ await skipGuide(page);page.setDefaultTimeout(12000);
  await page.locator('.desktop-pet').waitFor();
 }
 async function drag(from,selector,origin,dest){
@@ -120,7 +122,7 @@ try{
  await page.waitForFunction(()=>!document.querySelector('.pet-fox')?.classList.contains('is-away'),undefined,{timeout:23000});
  assert.deepEqual(await mainBounds(),shifted);
  record('独立角色跨桌面移动、15 秒后归位、途中截停、聊天保留位置、回营地新位置',{camp,away,mid,shifted});
- await page.locator('.pet-fox .fox-nose').click();
+ await page.locator('.pet-fox .fox-nose').dblclick();
  await btn('好奇心山洞').click();
  await btn('今日热榜').click();
  await tab('等你来答').click();
@@ -168,8 +170,8 @@ try{
  record('两种真实推荐、隔离示例、收藏、回答摘要与切页复用缓存',outcomes);
  await app.close();app=undefined;
  await launch();
- await page.locator('.pet-fox .fox-nose').click();
- await btn('和刘看山聊聊').click();
+ await page.locator('.pet-fox .fox-nose').dblclick();
+ await btn('和刘看山互动，可双击打开聊天').dblclick();
  await page.locator('.companion-opening').waitFor();
  assert.match(await page.locator('.companion-opening').innerText(),/知乎热榜/);
  await btn('关闭对话').click();

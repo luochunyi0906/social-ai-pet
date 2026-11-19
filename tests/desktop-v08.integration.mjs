@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
@@ -30,12 +31,13 @@ export async function run() {
   async function launch() {
     app = await electron.launch({executablePath, env:{...process.env,KANSHAN_DATA_DIR:profile,MODEL_API_KEY:'',ZHIHU_ACCESS_SECRET:''}, timeout:20000});
     page = await app.firstWindow();
+    await skipGuide(page);
     page.setDefaultTimeout(7500);
     await page.locator('.desktop-pet').waitFor();
     await page.waitForFunction(async () => (await window.kanshan.load()).ok);
   }
   const button = (name) => page.getByRole('button', {name,exact:true});
-  const fromDesktop = () => button('打开好奇心营地，可拖动刘看山').click();
+  const fromDesktop = () => button('和刘看山互动，可双击打开营地').dblclick();
   const closeSheet = (label) => button('关闭'+label).click();
   const clickPlot = (slot) => page.locator('.camp-plot').filter({has:page.locator('text',{hasText:slot})}).locator('.camp-soil').click();
   const assertVisible = (selector, value) => page.locator(selector).filter({hasText:value}).first().waitFor();
@@ -145,7 +147,7 @@ export async function run() {
     await assertVisible('.camp-sheet','A2 · 幼苗');
     await page.screenshot({path:join(artifacts,'native-camp-after-care.png')});
     mark('选种、取消、确认、选择工具点田、空田反馈及手账返回');
-    await button('和刘看山聊聊').click();
+    await button('和刘看山互动，可双击打开聊天').dblclick();
     await assertVisible('.chat-modal','尚未配置');
     await page.keyboard.press('Escape');
     await page.locator('.desktop-pet').waitFor();

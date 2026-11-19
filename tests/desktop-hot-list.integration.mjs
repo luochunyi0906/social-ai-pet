@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
@@ -65,11 +66,12 @@ async function launch(){
   };
  });
  page=await app.firstWindow();
+ await skipGuide(page);
  page.setDefaultTimeout(12000);
  await page.locator('.desktop-pet').waitFor();
 }
 async function openHot(){
- await page.locator('.pet-fox .fox-nose').click();
+ await page.locator('.pet-fox .fox-nose').dblclick();
  await button('好奇心山洞').click();
  await page.getByRole('region',{name:'山洞探索桌'}).waitFor();
  await button('今日热榜').click();

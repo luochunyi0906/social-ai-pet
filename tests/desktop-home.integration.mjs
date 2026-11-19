@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
@@ -39,6 +40,7 @@ async function launch(){
   env:{...process.env,KANSHAN_DATA_DIR:profile}, timeout:20000
  });
  page=await app.firstWindow();
+ await skipGuide(page);
  page.setDefaultTimeout(7200);
  await page.emulateMedia({reducedMotion:'no-preference'});
  await has(page.locator('.desktop-pet'));
@@ -97,7 +99,7 @@ async function dragOutfit(){
 }
 try{
  await launch();
- await page.locator('.pet-fox .fox-nose').click();
+ await page.locator('.pet-fox .fox-nose').dblclick();
  await has(btn('进入暖木小屋'));
  await page.locator('.camp-journal').click();
  await has(page.getByText('小屋升级前的收藏',{exact:true}).first());
@@ -201,14 +203,14 @@ try{
  const position=await dragOutfit();
  await snap('06-桌面森林引路者');
  await desktopSprite().waitFor({state:'visible',timeout:23000});
- await desktopSprite().locator('.fox-costume-hit').click();
+ await desktopSprite().locator('.fox-costume-hit').dblclick();
  await has(page.locator('.camp-fox [data-outfit-id="forest-guide"]'));
  const spacing=[];
  for(const viewport of [[900,740],[720,620],[600,540]]){
   await app.evaluate(({BrowserWindow},size)=>BrowserWindow.fromId(1).setSize(...size),viewport);
   await page.waitForFunction(([width,height])=>innerWidth===width&&innerHeight===height,viewport);
   const bench=btn('休息处，和刘看山聊聊');
-  const companion=btn('和刘看山聊聊');
+  const companion=btn('和刘看山互动，可双击打开聊天');
   const benchBox=await bench.boundingBox();
   const companionBox=await companion.boundingBox();
   const costumeBox=await companion.locator('.fox-costume-hit').boundingBox();
@@ -272,7 +274,7 @@ try{
  assert.equal(await readFile(join(profile,'garden-v1.json'),'utf8'),savedLegacy);
  assert.equal((await api('load')).data.favorites[0].title,'小屋升级前的收藏');
  assert.equal((await api('wearOutfit','unregistered')).ok,false);
- await desktopSprite().locator('.fox-costume-hit').click();
+ await desktopSprite().locator('.fox-costume-hit').dblclick();
  await enterHome();
  await openCloset();
  await btn('恢复默认装扮').click();
@@ -284,7 +286,7 @@ try{
  assert.deepEqual(await bounds(),position);
  mark('重启保留确认的套装与位置，按规则正常醒来；恢复默认有效，旧收藏字节未改');
 
- await page.locator('.pet-fox .fox-nose').click();
+ await page.locator('.pet-fox .fox-nose').dblclick();
  await enterHome();
  await app.evaluate(({BrowserWindow})=>BrowserWindow.fromId(1).setSize(600,560));
  await page.waitForFunction(()=>innerWidth===600);

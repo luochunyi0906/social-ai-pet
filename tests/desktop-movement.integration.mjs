@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -13,6 +14,7 @@ let app;
 try {
  app=await electron.launch({executablePath,env:{...process.env,KANSHAN_DATA_DIR:profile},timeout:20000});
  const page=await app.firstWindow();
+ await skipGuide(page);
  await page.emulateMedia({reducedMotion:'no-preference'});
  const actor=page.locator('.pet-fox');
  const work=await app.evaluate(({BrowserWindow,screen})=>{
@@ -109,9 +111,8 @@ try {
  assert.equal(returned.visible,false);
  const cave=page.locator('.pet-cave .pet-caption');
  await cave.click();
- assert.equal(await page.locator('.camp-shell').count(),0);
- await cave.click();
  await page.locator('.camp-shell').waitFor();
+ await page.getByRole('button',{name:'山洞入口',exact:true}).click();
  await page.getByRole('dialog',{name:'山洞换装间'}).waitFor();
  console.log('PASS 远距离面向营地逐帧跑回，归位采用新营地坐标，山洞仍可点击');
 } finally {
