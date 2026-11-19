@@ -1,4 +1,5 @@
 import { useId, type CSSProperties } from 'react';
+import type { WeatherLook } from './types';
 
 type Form = 'fox' | 'human';
 const eyes = {
@@ -13,9 +14,9 @@ const eyes = {
 };
 const collar = {
  fox: {
-  raised: 'M617 885Q638 859 665 857Q687 846 706 820L725 832Q724 855 746 874L729 905Q701 894 677 904L646 921Z',
-  crease: 'M657 904Q679 876 705 844M696 874Q710 867 726 877',
-  fabric: '#2859a8', seam: '#83a6f8', outline: '#17264e', base: 34,
+  raised: 'M612 877Q645 861 674 858Q693 846 706 823Q711 815 720 824Q726 831 724 844Q729 861 751 875L744 902Q712 891 680 914L648 925Z',
+  crease: 'M648 901Q680 893 712 840M697 894Q722 878 736 886',
+  fabric: '#164de7', seam: '#648aff', outline: '#17264e', base: 28,
  },
  human: {
   raised: 'M569 507Q580 480 583 455L617 413Q634 428 630 455L664 468Q649 484 630 500L611 534Z',
@@ -49,21 +50,26 @@ export function PortraitGaze({ form, facing }: { form: Form; facing?: 'left' | '
  </g>;
 }
 
-export function PortraitCollar({ form }: { form: Form }) {
+export function PortraitCollar({ form, clothing }: { form: Form; clothing?: WeatherLook['clothing'] }) {
  const item = collar[form];
+ const id=useId();
+ const palette=form==='fox'&&clothing==='hot'?{seam:'#c6dfff',fabric:'#73a5ee'}:item;
  const style = { '--collar-rest': `${item.base}px` } as CSSProperties;
  return <g className="portrait-collar" style={style} data-collar-form={form} aria-hidden="true">
-  <path d={item.raised} fill={item.fabric} stroke={item.outline} strokeWidth="7" strokeLinejoin="round"/>
-  <path d={item.crease} fill="none" stroke={item.seam} strokeWidth="5" strokeLinecap="round"/>
+  <defs><linearGradient id={id} x2=".30" y2="1">
+   <stop stopColor={palette.seam}/><stop offset=".55" stopColor={palette.fabric}/><stop offset="1" stopColor={palette.fabric}/>
+  </linearGradient></defs>
+  <path d={item.raised} fill={`url(#${id})`} stroke={item.outline} strokeWidth="7" strokeLinejoin="round"/>
+  <path d={item.crease} fill="none" stroke={palette.seam} strokeOpacity=".8" strokeWidth="5" strokeLinecap="round"/>
  </g>;
 }
 
-export function PortraitDetailFrame({ form, x, y, width, height, facing, gaze, lift }:{
+export function PortraitDetailFrame({ form, x, y, width, height, facing, gaze, clothing }:{
  form: Form; x: number; y: number; width: number; height: number;
- facing?: 'left' | 'right'; gaze: boolean; lift: boolean;
+ facing?: 'left' | 'right'; gaze: boolean; clothing?: WeatherLook['clothing'];
 }) {
  return <svg x={x} y={y} width={width} height={height} viewBox={canvas[form]} aria-hidden="true" pointerEvents="none">
   {gaze && <PortraitGaze form={form} facing={facing}/>}
-  {lift && <PortraitCollar form={form}/>}
+  <PortraitCollar form={form} clothing={clothing}/>
  </svg>;
 }

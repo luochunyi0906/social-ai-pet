@@ -18,6 +18,8 @@ async function main(){
  for(const name of ['desktop','dist','skills'])await fs.cp(path.join(root,name),path.join(application,name),{recursive:true});
  const helper=path.join(application,'desktop/native/window-info');
  run('/usr/bin/xcrun',['clang',...(process.env.KANSHAN_MAC_SDK?['-isysroot',process.env.KANSHAN_MAC_SDK]:[]),'-mmacosx-version-min=13.0','-fobjc-arc','-O2','-framework','Foundation','-framework','AppKit','-framework','CoreGraphics',path.join(application,'desktop/native/window-info.m'),'-o',helper]);
+ const audioHelper=path.join(application,'desktop/native/audio-output');
+ run('/usr/bin/xcrun',['clang',...(process.env.KANSHAN_MAC_SDK?['-isysroot',process.env.KANSHAN_MAC_SDK]:[]),'-mmacosx-version-min=13.0','-fobjc-arc','-O2','-framework','Foundation','-framework','CoreAudio',audioHelper+'.m','-o',audioHelper]);
  for(const name of ['zhida','hot-list']){
   const directory=path.join(application,'skills',name);
   const manifest=JSON.parse(await fs.readFile(path.join(directory,'manifest.json'),'utf8'));

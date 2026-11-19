@@ -1,27 +1,23 @@
-import { createContext, useContext, useEffect, useId, useState, type ReactNode } from 'react';
-import { Fox } from './Fox';
-import {defaultMotion,useCompanionFrame,type ActorMotion} from './ActorAnimation';
-import { assetUrl, idleFrame, loadOutfitAction, outfitPlacement, type Outfit } from './outfits';
-import walkCycle from './assets/companion/act_walk/act_walk.gif?url&no-inline';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {defaultMotion,type ActorMotion} from './ActorAnimation';
+import { idleFrame, loadOutfitAction, type Outfit } from './outfits';
 import {AppearanceArt} from './PetAppearance';
-import type {PetAppearance,WeatherLook,WindowPose} from './types';
+import type {PetAppearance,WeatherLook,HumanWeather,WindowPose,CheekPose,ListeningStatus} from './types';
 import type {PetGesture} from './usePetClicks';
-import {WeatherArt} from './WeatherArt';
 import {preloadFoxMovement} from './FoxMotionArt';
+import {ClassicWardrobeArt} from './ClassicWardrobeArt';
 
-type Appearance = { appearance?: PetAppearance; outfit?: Outfit; sleeping: boolean; frame?: string; motion:ActorMotion; sprite?:ReturnType<typeof useCompanionFrame>; idleStill?:boolean; walkingGif?:boolean; daydream?:boolean; weather?:WeatherLook; caveOutfit?:string|null; windowPose?:WindowPose; motionEnabled?:boolean };
+type Appearance = { appearance?: PetAppearance; outfit?: Outfit; sleeping: boolean; frame?: string; motion:ActorMotion; daydream?:boolean; weather?:WeatherLook; caveOutfit?:string|null; humanWeather?:HumanWeather|null; weatherUnlocked?:boolean; windowPose?:WindowPose; motionEnabled?:boolean };
 const AppearanceContext = createContext<Appearance>({ sleeping: false,motion:defaultMotion });
 
-export function CompanionProvider({ appearance, outfit: selectedOutfit, sleeping, action, enabled, cue, motion=defaultMotion, motionEnabled=true, stillIdle=false, walkingGif=false, preloadBase=false, daydream, weather,caveOutfit,windowPose, children, onError }: {
- appearance?: PetAppearance; outfit?: Outfit; sleeping: boolean; action: string; enabled: boolean; cue: number; motion?:ActorMotion; motionEnabled?:boolean; stillIdle?:boolean; walkingGif?:boolean; preloadBase?:boolean; daydream?:boolean; weather?:WeatherLook;caveOutfit?:string|null;windowPose?:WindowPose; children: ReactNode; onError: (message: string) => void;
+export function CompanionProvider({ appearance, outfit: selectedOutfit, sleeping, action, enabled, cue, motion=defaultMotion, motionEnabled=true, stillIdle=false, daydream, weather,caveOutfit,humanWeather,weatherUnlocked,windowPose, children, onError }: {
+ appearance?: PetAppearance; outfit?: Outfit; sleeping: boolean; action: string; enabled: boolean; cue: number; motion?:ActorMotion; motionEnabled?:boolean; stillIdle?:boolean; daydream?:boolean; weather?:WeatherLook;caveOutfit?:string|null;humanWeather?:HumanWeather|null;weatherUnlocked?:boolean;windowPose?:WindowPose; children: ReactNode; onError: (message: string) => void;
 }) {
  const custom=appearance==='human'||appearance==='fox';
  const outfit=custom?undefined:selectedOutfit;
  const [playing, setPlaying] = useState<{ outfitId: string; name: string; cue: number; frame: string }>();
  const [reduced, setReduced] = useState(() => matchMedia('(prefers-reduced-motion: reduce)').matches);
  const idleStill=stillIdle&&motion.clip==='act_idle';
- const playGif=walkingGif&&motion.clip==='act_walk'&&motionEnabled&&enabled&&!sleeping&&!outfit&&!custom&&!reduced;
- const sprite=useCompanionFrame(sleeping||motion.clip==='act_sleep'?defaultMotion:motion,motionEnabled&&!outfit&&!custom&&!sleeping&&!idleStill&&!playGif,reduced,preloadBase&&!custom);
  const name = outfit && (sleeping ? (outfit.actions.sleep ? 'sleep' : undefined) :
   enabled && !reduced && !idleStill ? outfit.triggers[action] : undefined);
 
@@ -34,8 +30,9 @@ export function CompanionProvider({ appearance, outfit: selectedOutfit, sleeping
  const clothing = weather?.clothing;
  const glasses = weather?.glasses && !weather.umbrella;
  useEffect(() => {
-  if (appearance === 'fox') preloadFoxMovement(clothing, glasses);
- }, [appearance, clothing, glasses]);
+  if (appearance === 'fox') preloadFoxMovement(clothing, glasses,caveOutfit??
+   (weatherUnlocked&&weather?.umbrella?'rain':undefined));
+ }, [appearance, clothing, glasses, caveOutfit, weather?.umbrella, weatherUnlocked]);
 
  useEffect(() => {
   if (!outfit || !name || reduced || !enabled) return;
@@ -71,35 +68,7 @@ export function CompanionProvider({ appearance, outfit: selectedOutfit, sleeping
  let frame: string | undefined;
  if (outfit && name && enabled && !reduced && playing?.outfitId === outfit.id && playing?.name === name && playing.cue === cue) frame = playing.frame;
  if (outfit && sleeping && outfit.actions.sleep && !frame) frame = outfit.actions.sleep.frames[0];
- return <AppearanceContext.Provider value={{ appearance, outfit, sleeping, frame, motion, sprite, idleStill, walkingGif:playGif, daydream,weather,caveOutfit,windowPose,motionEnabled:enabled&&motionEnabled&&!reduced }}>{children}</AppearanceContext.Provider>;
-}
-
-export function CostumeArt({ outfit, frame = idleFrame(outfit), preview, cleanPreview, onError,weather }: {
- outfit: Outfit; frame?: string; preview?: string; cleanPreview?: boolean; onError?: () => void;weather?:WeatherLook;
-}) {
- const matteId = useId();
- const trim = cleanPreview ? (outfit.previewEdgeTrim ?? 0) * outfit.scale : 0;
- const { x, y } = outfitPlacement(outfit);
- const transform = `translate(${x},${y}) scale(${outfit.scale})`;
- return <svg className="fox fox-costume" viewBox="0 0 240 310" role="img" aria-label={`刘看山 · ${outfit.name}`}
-  data-outfit-id={outfit.id} data-outfit-frame={frame}>
-  {trim > 0 && <defs>
-   <filter id={matteId} x="0%" y="0%" width="100%" height="100%">
-    <feComponentTransfer in="SourceAlpha">
-     <feFuncA type="linear" slope="1.8" intercept="-.8"/>
-    </feComponentTransfer>
-    <feMorphology operator="erode" radius={trim}/>
-    <feGaussianBlur stdDeviation={trim / 3} result="cleanMatte"/>
-    <feComposite in="SourceGraphic" in2="cleanMatte" operator="in"/>
-   </filter>
-  </defs>}
-  <ellipse cx="120" cy="293" rx="67" ry="8" fill="#2b352a" opacity=".19"/>
-  <image href={preview ?? assetUrl(outfit, frame)} onError={onError} x={x} y={y}
-   width={outfit.canvas.width*outfit.scale} height={outfit.canvas.height*outfit.scale}
-   filter={trim > 0 ? `url(#${matteId})` : undefined}/>
-  <path className="fox-costume-hit" d={outfit.hitPath} transform={transform} fill="transparent" aria-hidden="true"/>
-  <WeatherArt look={weather}/>
- </svg>;
+ return <AppearanceContext.Provider value={{ appearance, outfit, sleeping, frame, motion, daydream,weather,caveOutfit,humanWeather,weatherUnlocked,windowPose,motionEnabled:enabled&&motionEnabled&&!reduced }}>{children}</AppearanceContext.Provider>;
 }
 
 export function RestingBlanket({ outfitId = 'default' }: { outfitId?: string }) {
@@ -115,32 +84,12 @@ export function RestingBlanket({ outfitId = 'default' }: { outfitId?: string }) 
  </svg>;
 }
 
-function SpriteArt({motion,sprite,paper,walkingGif,weather}:{
- motion:ActorMotion;sprite?:Appearance['sprite'];paper:boolean;walkingGif?:boolean;weather?:WeatherLook;
-}) {
- const sitting=motion.clip==='emo_thinking'||(motion.clip==='act_sit'&&(sprite?.index??0)>=3);
- const hit=sitting?'M44 289L53 134 70 76Q118 57 158 83L202 125 211 289Z':
-  'M44 281L52 156 55 88 76 39 148 43 186 73 206 131 195 232 178 292 64 292Z';
- const facing=motion.facing==='left'?'translate(240 0) scale(-1 1)':undefined;
- return <svg className="fox fox-animation" viewBox="0 0 240 310" role="img"
-  aria-label="刘看山" data-outfit-id="default" data-animation={motion.clip}
-  data-animation-stage={motion.stage} data-animation-frame={!walkingGif&&sprite ? sprite.index+1 : undefined} data-animation-facing={motion.facing}
-  data-animation-format={walkingGif?'gif':undefined}
-  data-animation-pose={motion.stage==='hold'?'sit_hold':undefined}>
-  <image href={walkingGif?walkCycle:sprite?.url} x={-37.44} y={3.64} width={314.88} height={314.88} transform={facing} pointerEvents="none"/>
-  {paper&&<rect x="135" y="160" width="44" height="33" rx="4" fill="#e7d6ac" stroke="#8a785a" strokeWidth="3"/>}
-  <g transform={facing}><WeatherArt look={weather}/></g>
-  <path className="fox-nose fox-animation-hit" d={hit} transform={facing} fill="transparent" aria-hidden="true"/>
- </svg>;
-}
-
-export function Companion({ action = 'observe', paper = false,gesture }: { action?: string; paper?: boolean;gesture?:PetGesture }) {
- const { appearance, outfit, sleeping, frame, motion, sprite, idleStill, walkingGif, daydream,weather,caveOutfit,windowPose,motionEnabled } = useContext(AppearanceContext);
+export function Companion({ paper = false,gesture,cheek,faceEnabled,listening }: { action?: string; paper?: boolean;gesture?:PetGesture;cheek?:CheekPose;faceEnabled?:boolean;listening?:ListeningStatus }) {
+ const { appearance, outfit, sleeping, frame, motion, daydream,weather,caveOutfit,humanWeather,weatherUnlocked,windowPose,motionEnabled } = useContext(AppearanceContext);
  if (sleeping && !outfit?.actions.sleep) return <RestingBlanket outfitId={outfit?.id}/>;
  if (appearance==='human'||appearance==='fox') return <AppearanceArt appearance={appearance} motion={motion} motionEnabled={motionEnabled}
-  windowPose={windowPose} daydream={daydream} weather={weather} caveOutfit={caveOutfit} gesture={gesture}/>;
- if(windowPose) return <Fox action="window" windowPose={windowPose} weather={weather}/>;
- if(gesture&&!outfit) return <Fox action="gesture" gesture={gesture} weather={weather}/>;
- if (!outfit&&(sprite||walkingGif)&&motion.clip!=='act_sleep') return <SpriteArt motion={motion} sprite={sprite} paper={paper} walkingGif={walkingGif} weather={weather}/>;
- return outfit ? <CostumeArt outfit={outfit} frame={frame} weather={weather}/> : <Fox action={idleStill?'still':action} paper={paper} weather={weather}/>;
+  windowPose={windowPose} daydream={daydream} weather={weather} caveOutfit={caveOutfit} humanWeather={humanWeather} weatherUnlocked={weatherUnlocked} gesture={gesture} cheek={cheek} faceEnabled={faceEnabled} listening={listening}/>;
+ return <ClassicWardrobeArt id={outfit?.id} motion={motion} windowPose={windowPose} gesture={gesture}
+  animate={motionEnabled} weather={weather} raincoat={!outfit&&weatherUnlocked&&weather?.umbrella} frame={outfit?(frame??idleFrame(outfit)):undefined}
+  showcase={Boolean(outfit&&frame&&frame!==idleFrame(outfit))} paper={paper}/>;
 }

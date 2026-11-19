@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState,type KeyboardEvent,type SyntheticEvent} from 'react';
 
-export type PetGesture='look'|'upset'|'wipe'|'lift'|'land';
+export type PetGesture='look'|'upset'|'wipe'|'lift'|'land'|'knock'|'calm'|'glance';
 export function usePetClicks(open:()=>void,activity?:(kind:string)=>void){
  const [gesture,setGesture]=useState<PetGesture>();
  const clicks=useRef<number[]>([]);
@@ -59,5 +59,5 @@ export function usePetClicks(open:()=>void,activity?:(kind:string)=>void){
  function menuKey(event:KeyboardEvent){
   if(event.key==='ContextMenu'||event.shiftKey&&event.key==='F10')openMenu(event);
  }
- return {gesture,pick,dragAction,openMenu,menuKey};
+ return {gesture,pick,dragAction,openMenu,menuKey,interrupt:()=>{clear();setGesture(undefined);}};
 }

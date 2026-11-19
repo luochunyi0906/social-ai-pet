@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent, PointerEvent } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 
 const VIEW_COLUMNS = 4;
 const VIEW_ROWS = 2;
@@ -10,10 +10,11 @@ const directions = [
  { angle: 180, name: '背面' }, { angle: 270, name: '另一侧' },
 ];
 
-export function WardrobeTurntable({ name, sprite, front, side, back, dragOnly = false }: {
- name: string; sprite?: string; front: string; side: string; back: string; dragOnly?: boolean;
+export function WardrobeTurntable({ name, sprite, front, side, back, renderView, dragOnly = false }: {
+ name: string; sprite?: string; front?: string; side?: string; back?: string; renderView?:(angle:number)=>ReactNode; dragOnly?: boolean;
 }) {
  const viewer = useRef<HTMLDivElement>(null);
+ const clip = useId();
  const lastX = useRef<number | undefined>(undefined);
  const [angle, setAngle] = useState(0);
  const [ready, setReady] = useState(false);
@@ -86,11 +87,11 @@ export function WardrobeTurntable({ name, sprite, front, side, back, dragOnly = 
    }}
    onLostPointerCapture={() => { lastX.current = undefined; }}>
    <div className="wardrobe-turntable-figure" aria-hidden="true" data-view={view} data-ready={ready}>
-    {ready ? <span style={{
-     backgroundImage: `url("${sprite}")`,
-     backgroundSize: `${VIEW_COLUMNS * 100}% ${VIEW_ROWS * 100}%`,
-     backgroundPosition: `${column / (VIEW_COLUMNS - 1) * 100}% ${row / (VIEW_ROWS - 1) * 100}%`,
-    }}/> : <img src={fallback} alt="" draggable={false}
+    {renderView ? renderView(degrees) : ready ? <svg className="wardrobe-angle-atlas" viewBox="0 0 256 256">
+     <defs><clipPath id={clip}><rect width={VIEW_SIZE} height={VIEW_SIZE}/></clipPath></defs>
+     <image href={sprite} width={VIEW_COLUMNS*VIEW_SIZE} height={VIEW_ROWS*VIEW_SIZE} clipPath={`url(#${clip})`}
+      x={-column*VIEW_SIZE} y={-row*VIEW_SIZE}/>
+    </svg> : <img src={fallback} alt="" draggable={false}
      style={view === 3 ? { transform: 'scaleX(-1)' } : undefined}/>}
    </div>
    <span className="wardrobe-turntable-hint" aria-hidden="true">360° · 左右拖动</span>

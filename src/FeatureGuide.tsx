@@ -9,7 +9,7 @@ import sprout from './assets/camp/sprout.png';
 import cabin from './assets/camp/cabin.png';
 import bed from './assets/home/bed.png';
 import wardrobe from './assets/home/wardrobe.png';
-import outfit from './assets/wardrobe-designs/forest-guide/front-cutout.png';
+import outfit from './assets/outfits/forest-guide/front.webp';
 import notebook from './assets/hot/notebook.webp';
 
 const guides = {

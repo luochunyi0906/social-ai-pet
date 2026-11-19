@@ -73,14 +73,14 @@ async function teachingCandidate(excluded,now){
 }
 
 function mutate(fn){const next=queue.then(async()=>{const data=fn(await readStore());const target=storePath(),temp=target+'.'+randomUUID()+'.tmp';await fs.mkdir(path.dirname(target),{recursive:true});const h=await fs.open(temp,'wx',0o600);try{await h.writeFile(JSON.stringify(data));await h.sync();}finally{await h.close();}await fs.rename(temp,target);return data;});queue=next.catch(()=>{});return next;}
-const roamIPC=new Set(['roam-hit','roam-press','roam-chat','roam-ready','window-drag-start','window-drag-end','menu']);
+const roamIPC=new Set(['roam-hit','roam-press','roam-chat','roam-ready','window-drag-start','window-drag-end','menu','listening-status','cheek-capture','knock-mode']);
 function check(event,name){const child=roam.child;const window=child&&event.sender===child.webContents&&roamIPC.has(name)?child:win;
  if(!window||event.sender!==window.webContents||event.senderFrame!==window.webContents.mainFrame)throw Error('无效调用来源。');
  return window===child;
 }
 function handle(name,fn){ipcMain.handle(name,async(event,...args)=>{const inRoam=check(event,name);try{if(quitting)throw Error('应用正在保存并退出。');return{ok:true,data:await fn(...args,...(roamIPC.has(name)?[inRoam]:[]))};}catch(e){return{ok:false,error: e?.name==='AbortError'?'处理已取消或超时。':e.message||'操作失败，请重试。'};}});}
 function hasPending(){return pending.size||chat.busy()||teaching.busy();}
-function stop(){resetCaveVisit();void chat.cancel().catch(()=>{});teaching.cancel();for(const c of pending.values())c.abort();pending.clear();selected=null;selectionVersion++;selecting=false;}
+function stop(){setDeskKnock(false);resetCaveVisit();void chat.cancel().catch(()=>{});teaching.cancel();for(const c of pending.values())c.abort();pending.clear();selected=null;selectionVersion++;selecting=false;}
 async function extractFile(file,signal){const stat=await fs.stat(file);if(stat.size>10*1024*1024)throw Error('文件超过 10 MB，请摘选内容后重试。');if(signal.aborted)throw new DOMException('Aborted','AbortError');const bytes=await fs.readFile(file,{signal});if(signal.aborted)throw new DOMException('Aborted','AbortError');if(path.extname(file).toLowerCase()==='.txt')return core.validateText(new TextDecoder('utf-8',{fatal:true}).decode(bytes));const {getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs');if(signal.aborted)throw new DOMException('Aborted','AbortError');const task=getDocument({data:new Uint8Array(bytes),isEvalSupported:false,disableFontFace:true,useSystemFonts:false});const cancel=()=>void task.destroy();signal.addEventListener('abort',cancel,{once:true});try{const doc=await task.promise;if(doc.numPages>80)throw Error('PDF 超过 80 页，请摘选部分页面。');let text='';for(let i=1;i<=doc.numPages;i++){if(signal.aborted)throw new DOMException('Aborted','AbortError');const p=await doc.getPage(i);const content=await p.getTextContent();if(!content.items.some(x=>x.str?.trim()))throw Error('PDF 含无可提取文字的页面，可能是扫描件；请先 OCR 或粘贴文本。');text+=content.items.map(x=>x.str||'').join(' ')+'\n';if(text.length>core.LIMIT)throw Error('PDF 文字超过 12000 字，请摘选内容。');}return core.validateText(text);}catch(e){if(e.name==='PasswordException')throw Error('暂不支持加密 PDF，请提供未加密副本。');throw e;}finally{signal.removeEventListener('abort',cancel);await task.destroy();}}
 function modelStatus(){return {...model.publicStatus(),platform:process.platform};}
 function settingsView(){return modelSettings.publicSettings(process.env,zhihuEnvironment().ZHIHU_ACCESS_SECRET);}
@@ -250,12 +250,13 @@ handle('chat',async p=>{
 });
 const windowPrefs=preferences(app.getPath('userData'));
 const caveWardrobe=require('./cave-wardrobe.json');
+const humanWeatherCatalog=require('./human-weather.json');
 const {weatherController,defaults:weatherDefaults,validWeather,fetchWeather}=require('./weather.cjs');
 const {windowInfo,windowPlan}=require('./window-target.cjs');
 const weather=weatherController({request:(city,signal)=>fetchWeather(city,signal,net.fetch),publish:state=>{
  if(win&&!win.isDestroyed())win.webContents.send('weather-state',state);
 }});
-let weatherBlocked=false,chaseCooldown=0;
+let weatherBlocked=false,chaseCooldown=0,desktopBlocked=false,deskKnock=false;
 const localWeather=()=>windowPrefs.get().weather??{...weatherDefaults,chase:false};
 const costume=()=>windowPrefs.get().caveStickerReward?windowPrefs.get().caveOutfit??null:null;
 function weatherLook(){
@@ -272,7 +273,8 @@ handle('weather-save',async value=>{
  if(!value.chase)roam.stopChase();
  return weather.state();
 });
-handle('cave-wardrobe-status',async()=>({unlocked:await caveRewardStatus(),outfit:costume(),hintSeen:windowPrefs.get().wardrobeHintSeen===true}));
+const humanCostume=()=>windowPrefs.get().caveStickerReward?windowPrefs.get().humanWeather??null:null;
+handle('cave-wardrobe-status',async()=>({unlocked:await caveRewardStatus(),outfit:costume(),humanWeather:humanCostume(),hintSeen:windowPrefs.get().wardrobeHintSeen===true}));
 handle('cave-wardrobe-wear',async id=>{
  if(!await caveRewardStatus()||windowPrefs.get().appearance!=='fox')throw Error('请先找到山洞彩蛋，并选用狐狸 Q 版。');
  if(id!==null&&(typeof id!=='string'||!Object.hasOwn(caveWardrobe,id)))throw Error('这套服装不可用。');
@@ -280,6 +282,15 @@ handle('cave-wardrobe-wear',async id=>{
  windowPrefs.update({caveOutfit:id});
  try{await windowPrefs.flush();}
  catch(error){windowPrefs.update({caveOutfit:previous});throw error;}
+ return id;
+});
+handle('human-weather-wear',async id=>{
+ if(!await caveRewardStatus()||windowPrefs.get().appearance!=='human')throw Error('请先找到山洞彩蛋，并选用人版。');
+ if(id!==null&&(typeof id!=='string'||!Object.hasOwn(humanWeatherCatalog,id)))throw Error('这套服装不可用。');
+ const previous=humanCostume();
+ windowPrefs.update({humanWeather:id});
+ try{await windowPrefs.flush();}
+ catch(error){windowPrefs.update({humanWeather:previous});throw error;}
  return id;
 });
 handle('cave-wardrobe-hint',async()=>{
@@ -327,6 +338,11 @@ const outfitPrefs=outfitPreferences(app.getPath('userData'));
 handle('outfit-settings',outfitPrefs.read);
 handle('outfit-wear',outfitPrefs.save);
 const nativeSleep=require('./native-sleep.cjs');
+const listening=require('./listening.cjs').listening(state=>{
+ for(const window of [win,roam.child])if(window&&!window.isDestroyed?.())window.webContents.send('listening-state',state);
+});
+handle('listening-status',listening.snapshot);
+handle('listening-choose',listening.choose);
 handle('sleep-music',mode=>nativeSleep.music(mode,async()=>{
  const result=await dialog.showOpenDialog(win,{title:'选一首歌用 QQ 音乐播放',properties:['openFile'],
   filters:[{name:'音频',extensions:nativeSleep.AUDIO_EXTENSIONS}]});
@@ -372,6 +388,14 @@ handle('roam-press',(active,child)=>{
  if(child&&active)action('pet-interaction');
  roam.press(active);
 });
+handle('cheek-capture',(active,child)=>{
+ if(typeof active!=='boolean')throw Error('捏脸状态无效。');
+ if(active&&(surface!=='pet'||!win.isVisible()||child!==roam.away||roam.dragging))return false;
+ if(!child){captureUntil=active?Date.now()+10000:0;if(active)ignore(false);}
+ if(active){roam.stopChase();roam.press(true);}
+ else roam.press(false);
+ return true;
+});
 handle('roam-chat',child=>{if(child){roam.setPanel(true);show();action('chat');}});
 handle('roam-update',p=>{
  if(typeof p?.blocked!=='boolean'||typeof p.sleeping!=='boolean'||typeof p.outfitId!=='string'||
@@ -380,10 +404,12 @@ handle('roam-update',p=>{
  if(motion!==undefined&&(!['act_idle','act_sit','act_sleep','emo_happy','emo_curious','emo_thinking'].includes(motion?.clip)||
   !['loop','enter','hold'].includes(motion.stage)||!Number.isFinite(motion.since)||
   (motion.until!==null&&!Number.isFinite(motion.until))||typeof p.motionEnabled!=='boolean'))throw Error('角色动画状态无效。');
+ desktopBlocked=p.blocked;
+ if(desktopBlocked)setDeskKnock(false);
  weatherBlocked=p.blocked||p.weatherBlocked===true;
  weather.setBlocked(weatherBlocked||roam.special||roam.dragging);
  roam.update({outfitId:p.outfitId,appearance:windowPrefs.get().appearance,sleeping:p.sleeping,action:p.action,motion,motionEnabled:p.motionEnabled,daydream:p.daydream===true,
-  weather:weatherLook(),caveOutfit:costume(),autoClimbBlocked:weatherBlocked},p.blocked);
+  weather:weatherLook(),caveOutfit:costume(),humanWeather:humanCostume(),weatherUnlocked:windowPrefs.get().caveStickerReward===true,autoClimbBlocked:weatherBlocked},p.blocked);
 });
 function ignore(value) {
  if(!win||ignoring===value)return;
@@ -444,6 +470,7 @@ function setSurface(value) {
  const before=win.getBounds();
  const saved=windowPrefs.get();
  surface=value;
+ setDeskKnock(false);
  roam.setPanel(value==='panel');
  captureUntil=0;lastProbe=null;ignore(false);
  if(value==='panel'){
@@ -469,7 +496,11 @@ handle('guide-seen',async()=>{
  return true;
 });
 handle('window-drag-start',(payload,child)=>{
- if(payload?.surface==='roam')return !nativeDrag&&(child||surface==='pet')&&roam.start(payload,child);
+ if(payload?.surface==='roam'){
+  const started=!nativeDrag&&(child||surface==='pet')&&roam.start(payload,child);
+  if(started)setDeskKnock(false);
+  return started;
+ }
  if(child)return false;
  if(!payload||payload.surface!==surface||nativeDrag||!win.isVisible())return false;
  const bounds=win.getBounds();
@@ -477,6 +508,7 @@ handle('window-drag-start',(payload,child)=>{
  const {x,y}=payload;
  if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>content.width||y>content.height)return false;
  if(surface==='pet'&&!roam.beginCampDrag())return false;
+ setDeskKnock(false);
  lastProbe=null;
  ignore(false);
  nativeDrag={
@@ -545,6 +577,7 @@ function sendWindowPlayNotice(message){
 function requestWindowPlay(){
  setTimeout(async()=>{
   if(!win||win.isDestroyed()||!win.isVisible())return;
+  setDeskKnock(false);
   if(surface!=='pet'){sendWindowPlayNotice('请先点「收回桌面」，再从桌宠菜单选「去窗口边上玩」。');return;}
   sendWindowPlayNotice('');
   try{
@@ -554,7 +587,22 @@ function requestWindowPlay(){
   }catch(error){sendWindowPlayNotice(error.message);}
  },220);
 }
-function contextMenu(){const menu=Menu.buildFromTemplate([{label:'打开好奇心营地',click:()=>action('camp')},{label:'回家',click:()=>{show();action('home');}},{label:'叫醒刘看山',click:()=>{show();action('wake');}},{label:'和刘看山聊聊',click:()=>action('chat')},{label:'打开山洞',click:()=>action('cave')},{label:'去窗口边上玩',click:requestWindowPlay},{label:'打开花园',click:()=>action('garden')},{label:'投喂内容',click:()=>action('feed')},{type:'separator'},{label:'暂停／恢复',click:()=>action('pause')},{label:'低打扰开关',click:()=>action('quiet')},{label:'模型与检索设置',click:()=>action('settings')},{label:'使用教程',click:()=>{show();action('tutorial');}},{label:'重置桌面布局',click:()=>action('reset-layout')},{label:'隐藏桌宠',click:()=>{stop();win.hide();}},{label:'退出',click:()=>{stop();app.quit();}}]);
+function openPetInteraction(name){setDeskKnock(false);roam.setPanel(true);show();action(name);}
+function setDeskKnock(value){
+ if(value&&(surface!=='pet'||desktopBlocked||!win?.isVisible()||roam.dragging||roam.special||nativeDrag))return deskKnock;
+ if(deskKnock===value)return deskKnock;
+ deskKnock=value;
+ roam.setKnockMode(value);
+ const owner=roam.away?roam.child:win;
+ for(const window of [win,roam.child])if(window&&!window.isDestroyed())window.webContents.send('knock-mode-state',value&&window===owner);
+ if(value)action('pet-interaction');
+ return deskKnock;
+}
+handle('knock-mode',(value,child)=>{
+ if(typeof value!=='boolean')throw Error('敲敲状态无效。');
+ return child===roam.away?setDeskKnock(value):false;
+});
+function contextMenu(){const menu=Menu.buildFromTemplate([{label:'打开好奇心营地',click:()=>action('camp')},{label:'回家',click:()=>{show();action('home');}},{label:'叫醒刘看山',click:()=>{show();action('wake');}},{label:'和刘看山聊聊',click:()=>action('chat')},{label:'打开山洞',click:()=>action('cave')},{label:'去窗口边上玩',click:requestWindowPlay},{label:'陪听',click:()=>openPetInteraction('listen')},{label:deskKnock?'结束敲敲':'敲敲',click:()=>setDeskKnock(!deskKnock)},{label:'打开花园',click:()=>action('garden')},{label:'投喂内容',click:()=>action('feed')},{type:'separator'},{label:'暂停／恢复',click:()=>action('pause')},{label:'低打扰开关',click:()=>action('quiet')},{label:'模型与检索设置',click:()=>action('settings')},{label:'使用教程',click:()=>{show();action('tutorial');}},{label:'重置桌面布局',click:()=>action('reset-layout')},{label:'隐藏桌宠',click:()=>{stop();win.hide();}},{label:'退出',click:()=>{stop();app.quit();}}]);
  menu.on('menu-will-show',()=>roam.setMenu(true));
  menu.on('menu-will-close',()=>roam.setMenu(false));
  return menu;
@@ -583,7 +631,12 @@ app.whenReady().then(async()=>{
  if(!hasInstanceLock)return;
  if(screen?.getPrimaryDisplay)await windowPrefs.read();
  weather.configure(localWeather());
- powerMonitor?.on('suspend',()=>roam.suspend(true));
+ listening.start();
+ powerMonitor?.on('suspend',()=>{
+  setDeskKnock(false);
+  roam.suspend(true);
+  for(const window of [win,roam.child])if(window&&!window.isDestroyed?.())window.webContents.send('suspend');
+ });
  powerMonitor?.on('resume',()=>{roam.suspend(!win?.isVisible());void weather.refresh();});
  roam.configure(windowPrefs.get().wander??DEFAULT_WANDER);
  const primary=screen?.getPrimaryDisplay?.().workArea;
@@ -609,7 +662,7 @@ app.whenReady().then(async()=>{
  win.on('close',()=>{finishDrag();roam.dispose();stop();});
  win.on('blur',()=>{captureUntil=0;finishDrag();roam.press(false);});
  win.on('hide',()=>{finishDrag();roam.suspend(true);stop();visible(false);win.webContents.send('suspend');});
- win.on('minimize',()=>{finishDrag();roam.suspend(true);visible(false);});
+ win.on('minimize',()=>{setDeskKnock(false);finishDrag();roam.suspend(true);visible(false);});
  win.on('restore',()=>{roam.suspend(false);visible(true);});
  win.on('show',()=>{roam.suspend(false);visible(true);});
  win.on('focus',()=>visible(true));
@@ -629,6 +682,7 @@ app.whenReady().then(async()=>{
   event.preventDefault();
   roam.dispose();
   weather.stop();
+  listening.stop();
   hot.stop();
   localChat.stop();
   void Promise.allSettled([queue,configChange,windowPrefs.flush(),outfitPrefs.flush(),chat.flush(),hot.flush(),proactive.flush(),recommendations.flush(),teachings.flush()]).then(()=>app.quit());

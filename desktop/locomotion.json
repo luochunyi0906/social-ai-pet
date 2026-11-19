@@ -1,0 +1,5 @@
+{
+  "classic": { "walk": { "cycle": 760, "speed": 0.067 }, "run": { "cycle": 490, "speed": 0.124 }, "climb": { "cycle": 1060, "speed": 0.031 } },
+  "human":   { "walk": { "cycle": 860, "speed": 0.084 }, "run": { "cycle": 570, "speed": 0.155 }, "climb": { "cycle": 1140, "speed": 0.037 } },
+  "fox":     { "walk": { "cycle": 740, "speed": 0.060 }, "run": { "cycle": 530, "speed": 0.145 }, "climb": { "cycle": 1360, "speed": 0.052 } }
+}

@@ -1,11 +1,12 @@
 const {fitPanel,gazeNear}=require('./window-layout.cjs');
 const {chooseWindowRoute,nearbyWindowPlan,windowFocusTracker}=require('./window-target.cjs');
+const {dropTime,fallingPosition}=require('./window-drop.mjs');
 const SIZE={width:92,height:135};
 const FOX_SIZE={width:108,height:145};
 const {places:{fox:DESKTOP_ORIGIN}}=require('./pet-layout.json');
 const FOX_PADDING=7;
 const IDLE_MS=15000;
-const SPEED={act_walk:0.22,act_run:0.48};
+const locomotion=require('./locomotion.json');
 const AUTO_CLIMB={reach:38,movingScan:550,idleScan:1000,recheck:60,cooldown:20000};
 const DEFAULT_WANDER=Object.freeze({enabled:false,scope:'desktop',interval:90,distance:75,dwell:4});
 
@@ -21,11 +22,12 @@ function wanderSettings({enabled,scope='desktop',interval,distance,dwell}){
 }
 
 function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=Math.random,readWindow,planWindow,notify=()=>{}}){
- let child,detached=false,held=false,drag,campMoving=false,suspended=false,blocked=false,panel=false,menu=false,position;
+ let child,detached=false,held=false,drag,campMoving=false,suspended=false,blocked=false,panel=false,menu=false,knocking=false,position;
  let task;
  let nearby,nearbyPending=false,scanAt=0,checkAt=0,autoAfter=0;
  let wander=DEFAULT_WANDER;
  let appearance={outfitId:'default',sleeping:false,action:'observe'};
+ const pace=()=>locomotion[appearance.appearance]??locomotion.classic;
  const size=()=>appearance.appearance==='fox'?FOX_SIZE:SIZE;
  const desktopOrigin=()=>({...DESKTOP_ORIGIN,x:DESKTOP_ORIGIN.x-(appearance.appearance==='fox'?FOX_PADDING:0)});
  const home=()=>{
@@ -34,13 +36,15 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
  };
  const point=()=>child?.getBounds()??position??home();
  const workArea=box=>area({x:Math.round(box.x+size().width/2),y:Math.round(box.y+size().height/2)});
- const available=()=>!held&&!drag&&!campMoving&&!blocked&&!suspended&&!panel&&!menu;
+ const available=()=>!held&&!drag&&!campMoving&&!blocked&&!suspended&&!panel&&!menu&&!knocking;
  function visual(){
   const view={...appearance,action:drag?'lift':task?.motion?'walk':appearance.action==='walk'?'observe':appearance.action};
   if(drag||held||task?.motion||task?.kind==='window'||blocked||panel||suspended)view.daydream=false;
   if(task?.motion)view.motion=task.motion;
   if(task?.walkingGif)view.walkingGif=true;
-  if(task?.kind==='window')view.windowPose={phase:task.phase,side:task.plan.side,facing:task.facing};
+  if(task?.kind==='window')view.windowPose={
+   phase:task.phase,side:task.plan.side,facing:task.facing,since:task.started,speed:task.speed,release:task.release,
+  };
   if(child&&!child.isDestroyed())child.webContents.send('roam-view',view);
   publish({away:detached,dragging:!!drag,walking:!!task?.motion,
    strolling:task?.kind==='outbound'||task?.kind==='dwell',windowPlaying:task?.kind==='window'});
@@ -78,11 +82,13 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
  function animate(target,kind,clip,arrive,bounds,walkingGif=kind==='outbound'){
   let {x,y}=point();
   let last=Date.now();
-  const motion={clip,stage:'loop',since:last,until:null,facing:target.x<x?'left':'right'};
+  const speed=pace()[clip==='act_run'?'run':'walk'].speed;
+  const direction=Math.abs(target.x-x)/Math.max(1,Math.hypot(target.x-x,target.y-y));
+  const motion={clip,stage:'loop',since:last,until:null,facing:target.x<x?'left':'right',speed:speed*direction};
   const next={kind,motion,walkingGif,timer:setInterval(()=>{
    if(task!==next||!available())return;
    const dx=target.x-x,dy=target.y-y,distance=Math.hypot(dx,dy);
-   const now=Date.now(),step=Math.min(48,now-last)*SPEED[clip];
+   const now=Date.now(),step=Math.min(48,now-last)*speed;
    last=now;
    if(distance<=step+1){
     stopTask();
@@ -140,12 +146,8 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
    visual();
   },fullDesktop?undefined:bounds);
  }
- function canClimb(){
-  if(appearance.appearance==='fox')return !appearance.caveOutfit||appearance.weather?.everyday===true;
-  return (!appearance.appearance||appearance.appearance==='classic')&&appearance.outfitId==='default';
- }
  const startPoint=()=>detached?point():home();
- const canAutoClimb=()=>available()&&canClimb()&&!appearance.autoClimbBlocked&&
+ const canAutoClimb=()=>available()&&!appearance.autoClimbBlocked&&
   task?.kind!=='window'&&task?.kind!=='chase'&&Date.now()>=autoAfter;
  function scanNearby(){
   if(!readWindow||!planWindow||!canAutoClimb())return;
@@ -165,10 +167,10 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   if(route)startWindow(nearby.snapshot,route,start,form,true);
  }
  async function playWindow(){
-  if(!available()||!canClimb())return '请在普通桌面模式使用默认装扮的原版狐形或狐狸 Q 版。';
+  if(!available())return '请先回到普通桌面模式，再让刘看山去窗口边上玩。';
   if(!readWindow||!planWindow||task?.kind==='window'||task?.kind==='chase')return '当前无法进入窗口互动。';
   const snapshot=await readWindow();
-  if(!available()||task?.kind==='window'||task?.kind==='chase'||!canClimb())
+  if(!available()||task?.kind==='window'||task?.kind==='chase')
    return '角色当前无法开始窗口互动。';
   const form=appearance.appearance;
   const start=startPoint();
@@ -186,7 +188,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   stopTask();
   detachAt(home());
   const sequence={kind:'window',plan,phase:'look',facing:plan.approach.x<start.x?'left':'right',
-   started:Date.now(),last:Date.now(),scan:0,checking:false};
+   started:Date.now(),last:Date.now(),scan:0,checking:false,speed:pace().walk.speed};
   let from={x:start.x,y:start.y};
   let approachPosition=from;
   let landing;
@@ -194,21 +196,27 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
    const here=approachPosition;
    const dx=next.x-here.x,dy=next.y-here.y;
    const distance=Math.hypot(dx,dy);
-   const speed=Math.max(4,Math.min(14,(Date.now()-sequence.last)*.22));
+   const speed=Math.max(.5,Math.min(8,(Date.now()-sequence.last)*pace().walk.speed));
    if(distance<=speed){move(next);return true;}
    approachPosition={x:here.x+dx*speed/distance,y:here.y+dy*speed/distance};
    const sample={...approachPosition,...size()};
    move(fitPanel(sample,workArea(sample)));
    return false;
   };
+  const climbDuration=()=>Math.max(1060,Math.abs(from.y-sequence.plan.climb.y)/pace().climb.speed);
   function stage(phase){
    const here=point();
    from={x:here.x,y:here.y};
    sequence.phase=phase;
    if(phase==='approach')approachPosition=from;
-   if(phase==='perch')sequence.facing=undefined;
+   if(phase==='perch'||phase==='land'&&form!=='fox')sequence.facing=undefined;
    if(phase==='walk-away')sequence.facing=plan.side?'right':'left';
    sequence.started=Date.now();
+   if(phase==='climb')sequence.speed=Math.abs(from.y-sequence.plan.climb.y)/climbDuration();
+   else if(phase==='approach'){
+    const distance=Math.max(1,Math.hypot(sequence.plan.approach.x-from.x,sequence.plan.approach.y-from.y));
+    sequence.speed=pace().walk.speed*Math.abs(sequence.plan.approach.x-from.x)/distance;
+   }else if(phase==='walk-away')sequence.speed=35/650;
    visual();
   }
   function lost(){
@@ -218,8 +226,10 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
     return;
    }
    if(!['climb','pull','perch'].includes(sequence.phase))return;
+   if(form!=='fox'&&sequence.phase!=='perch')sequence.release={from:sequence.phase,elapsed:Math.max(0,Date.now()-sequence.started)};
    const here=point();
-   landing=fitPanel({x:sequence.plan.approach.x+(sequence.plan.side?22:-22),
+   const clearance=form==='fox'?22:34;
+   landing=fitPanel({x:sequence.plan.approach.x+(sequence.plan.side?clearance:-clearance),
     y:Math.min(here.y+200,sequence.plan.approach.y+25),...size()},workArea(here));
    stage('balance');
   }
@@ -241,7 +251,8 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
    const {area,approach,climb,perch}=sequence.plan;
    if(['look','approach','climb','pull','perch'].includes(sequence.phase)&&!sequence.checking&&time-sequence.scan>=350)scan();
    const interpolate=(destination,duration,arc=0)=>{
-    const fraction=Math.min(1,elapsed/duration);
+    const progress=Math.min(1,elapsed/duration);
+    const fraction=sequence.phase==='pull'?progress*progress*(3-2*progress):progress;
     move(fitPanel({x:from.x+(destination.x-from.x)*fraction,
      y:from.y+(destination.y-from.y)*fraction-arc*Math.sin(fraction*Math.PI),...size()},area));
     return fraction===1;
@@ -249,12 +260,24 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
    switch(sequence.phase){
     case 'look':if(elapsed>=550)stage('approach');break;
     case 'approach':if(step(approach))stage('climb');break;
-    case 'climb':if(interpolate(climb,Math.max(1100,Math.abs(from.y-climb.y)*5)))stage('pull');break;
+    case 'climb':if(interpolate(climb,climbDuration()))stage('pull');break;
     case 'pull':if(interpolate(perch,650,15))stage('perch');break;
     case 'perch':move(fitPanel({...perch,...size()},area));break;
-    case 'balance':if(elapsed>=320)stage('fall');break;
-    case 'fall':if(interpolate(landing,720,35))stage('land');break;
-    case 'land':if(elapsed>=350)stage('shake');break;
+    case 'balance':if(elapsed>=(form==='fox'?320:dropTime.balance))stage('fall');break;
+    case 'fall':{
+     if(form==='fox'){
+      if(interpolate(landing,dropTime.fall,35))stage('land');
+      break;
+     }
+     const progress=elapsed/dropTime.fall;
+     move(fitPanel({...fallingPosition(from,landing,progress),...size()},area));
+     if(progress>=1)stage('land');
+     break;
+    }
+    case 'land':
+     if(form==='fox'){if(elapsed>=350)stage('shake');}
+     else if(elapsed>=dropTime.land){arm();visual();}
+     break;
     case 'shake':if(elapsed>=700)stage('walk-away');break;
     case 'walk-away':if(interpolate(fitPanel({x:from.x+(plan.side?35:-35),y:from.y,...size()},area),650)){arm();visual();}break;
    }
@@ -269,7 +292,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   stopTask();
   detachAt(home());
   const until=Date.now()+4000;
-  const next={kind:'chase',motion:{clip:'act_walk',stage:'loop',since:Date.now(),until:null,facing:'right'}};
+  const next={kind:'chase',motion:{clip:'act_run',stage:'loop',since:Date.now(),until:null,facing:'right',speed:pace().run.speed}};
   next.timer=setInterval(()=>{
    if(task!==next)return;
    if(Date.now()>=until){arm();visual();return;}
@@ -279,7 +302,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
    if(distance<5)return;
    const facing=dx<0?'left':'right';
    if(facing!==next.motion.facing){next.motion={...next.motion,facing};visual();}
-   move(fitPanel({x:here.x+dx*Math.min(1,8/distance),y:here.y+dy*Math.min(1,8/distance),...size()},bounds));
+   move(fitPanel({x:here.x+dx*Math.min(1,(pace().run.speed*16)/distance),y:here.y+dy*Math.min(1,(pace().run.speed*16)/distance),...size()},bounds));
   },16);
   task=next;visual();
  }
@@ -376,6 +399,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   get child(){return child;},get away(){return detached;},get dragging(){return !!drag;},
   playWindow,scanNearby,chase,stopChase(){if(task?.kind==='chase'){arm();visual();}},get special(){return task?.kind==='window'||task?.kind==='chase';},
   start,finish,beginCampDrag,endCampDrag,press,block,suspend,probe,visual,
+  setKnockMode(value){if(knocking!==value){knocking=value;arm();}},
   setPanel(value){if(panel!==value){panel=value;arm();}},
   setMenu(value){if(menu!==value){menu=value;if(task?.kind!=='window')arm();}},
   configure(value){wander=wanderSettings(value);arm();},

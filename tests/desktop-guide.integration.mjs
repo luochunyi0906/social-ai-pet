@@ -95,7 +95,7 @@ try {
   await desktopActor.press('Enter');
   await page.waitForTimeout(1650);
   await pet().waitFor();
-  await desktopActor.locator('.fox-nose').click();
+  await desktopActor.locator('.fox-costume-hit').click();
   await page.waitForTimeout(1650);
   await pet().waitFor();
   assert.equal(await page.locator('.camp-shell, .chat-modal, .cave-entrance').count(), 0);
@@ -108,7 +108,7 @@ try {
   await page.locator('.cave-reveal video').waitFor({state:'detached'});
   await page.keyboard.press('Escape');
   await pet().waitFor();
-  await desktopActor.locator('.fox-nose').dblclick();
+  await desktopActor.locator('.fox-costume-hit').dblclick();
   const campActor = button('和刘看山互动，可双击打开聊天');
   await campActor.waitFor();
   await campActor.click();

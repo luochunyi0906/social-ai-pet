@@ -138,3 +138,7 @@
 .camp-shell.companion-away .camp-fox {visibility:hidden;}
 
 .pet-fox>.fox-animation .fox-animation-hit, .roam-character>.fox-animation .fox-animation-hit {pointer-events:fill;cursor:grab;}
+
+.wardrobe-moving-art {animation:wardrobe-walk .48s ease-in-out infinite;transform-origin:center bottom;}
+[data-outfit-motion="act_run"] .wardrobe-moving-art {animation-duration:.29s;}
+@keyframes wardrobe-walk {0%,100%{translate:0 0;}50%{translate:0 -7px;}}

@@ -88,11 +88,11 @@ try{
  const camp=await mainBounds();
  const area=await app.evaluate(({screen})=>screen.getPrimaryDisplay().workArea);
  const corner={x:area.x+area.width-110,y:area.y+80};
- await drag(page,'.pet-fox .fox-nose',camp,corner);
+ await drag(page,'.pet-fox .fox-costume-hit',camp,corner);
  await page.waitForFunction(()=>document.querySelector('.pet-fox')?.classList.contains('is-away'));
  const loose=app.windows().find(window=>window.url().includes('companion=1'));
  assert.ok(loose,'独立角色窗口');
- await loose.locator('.roam-character .fox-nose').waitFor();
+ await loose.locator('.roam-character .fox-costume-hit').waitFor();
  const away=await roamBounds();
  assert.deepEqual(await mainBounds(),camp);
  assert.ok(away.visible&&away.x-camp.x>150,JSON.stringify({camp,away}));
@@ -102,7 +102,7 @@ try{
  let mid=await roamBounds();
  while(mid.x===away.x&&Date.now()<until){await wait(50);mid=await roamBounds();}
  assert.notEqual(mid.x,away.x);
- const nose=await loose.locator('.fox-nose').boundingBox();
+ const nose=await loose.locator('.fox-costume-hit').boundingBox();
  await loose.mouse.move(nose.x+nose.width/2,nose.y+nose.height/2);
  await loose.mouse.down();
  const paused=await roamBounds();
@@ -122,7 +122,7 @@ try{
  await page.waitForFunction(()=>!document.querySelector('.pet-fox')?.classList.contains('is-away'),undefined,{timeout:23000});
  assert.deepEqual(await mainBounds(),shifted);
  record('独立角色跨桌面移动、15 秒后归位、途中截停、聊天保留位置、回营地新位置',{camp,away,mid,shifted});
- await page.locator('.pet-fox .fox-nose').dblclick();
+ await page.locator('.pet-fox .fox-costume-hit').dblclick();
  await btn('好奇心山洞').click();
  await btn('今日热榜').click();
  await tab('等你来答').click();
@@ -170,7 +170,7 @@ try{
  record('两种真实推荐、隔离示例、收藏、回答摘要与切页复用缓存',outcomes);
  await app.close();app=undefined;
  await launch();
- await page.locator('.pet-fox .fox-nose').dblclick();
+ await page.locator('.pet-fox .fox-costume-hit').dblclick();
  await btn('和刘看山互动，可双击打开聊天').dblclick();
  await page.locator('.companion-opening').waitFor();
  assert.match(await page.locator('.companion-opening').innerText(),/知乎热榜/);

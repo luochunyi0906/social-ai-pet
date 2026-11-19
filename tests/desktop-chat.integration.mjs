@@ -137,7 +137,7 @@ const disk=async()=>JSON.parse(await readFile(join(profile,'chat-v1.json'),'utf8
 const current=async()=>{const db=await disk();return db.sessions.find(session=>session.id===db.activeId);};
 
 async function openChat(){
- if(await page.locator('.desktop-pet').isVisible())await page.locator('.pet-fox .fox-nose').dblclick();
+ if(await page.locator('.desktop-pet').isVisible())await page.locator('.pet-fox .fox-costume-hit').dblclick();
  if(!await dialog().isVisible())await button('和刘看山互动，可双击打开聊天').dblclick();
  await dialog().waitFor();
  await dialog().getByText('聊天服务',{exact:false}).waitFor();

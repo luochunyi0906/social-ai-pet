@@ -23,9 +23,9 @@ test('全桌面选点可跨逻辑显示器，巡游和归位时窗口保持可�
   pet.configure({enabled:true,scope:'desktop',interval:30,distance:75,dwell:1});
   mock.timers.tick(30000);
   assert.equal(view.motion.clip,'act_walk');
-  for(let i=0;i<235;i++)mock.timers.tick(16);
+  for(let i=0;i<1000&&bounds.x<displays[1].x;i++)mock.timers.tick(16);
   assert.ok(bounds.x>=displays[1].x);
-  for(let i=0;i<200;i++)mock.timers.tick(16);
+  for(let i=0;i<1500&&pet.away;i++)mock.timers.tick(16);
   assert.equal(pet.away,false);
   assert.deepEqual({x:bounds.x,y:bounds.y},origin);
   assert.ok(visits.every(rect=>displays.some(screen=>rect.x>=screen.x&&rect.y>=screen.y&&
@@ -107,7 +107,7 @@ test('散步在实际边界内转向，停留后归位、冷却；前台、菜�
   assert.equal(view.motion.clip,'act_walk');
   assert.equal(view.walkingGif,true);
   assert.equal(visible,true);
-  tick(450);
+  tick(1100);
   assert.equal(view.motion,undefined);
   assert.equal(view.walkingGif,undefined);
   assert.ok(Math.hypot(point.x-anchor.x,point.y-anchor.y)>30);
@@ -133,7 +133,7 @@ test('散步在实际边界内转向，停留后归位、冷却；前台、菜�
   assert.deepEqual(point,stopped);
   mock.timers.tick(1);
   assert.equal(view.motion.clip,'act_walk');
-  tick(600);
+  tick(1000);
   assert.equal(visible,false);
   mock.timers.tick(25000);
   assert.equal(pet.away,false);
@@ -154,7 +154,7 @@ test('散步在实际边界内转向，停留后归位、冷却；前台、菜�
  }finally{pet.dispose();}
 });
 
-test('自主散步停留后用同一走路 GIF 归位，再恢复待机',({mock})=>{
+test('自主散步停留后用同一走路节奏归位，再恢复待机',({mock})=>{
  mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:0});
  const anchor={x:100,y:100};
  let position,view;
@@ -172,12 +172,12 @@ test('自主散步停留后用同一走路 GIF 归位，再恢复待机',({mock}
   mock.timers.tick(30000);
   assert.equal(view.walkingGif,true);
   assert.equal(view.motion.facing,'right');
-  advance(400);
+  advance(850);
   assert.equal(view.walkingGif,undefined);
   advance(2000);
   assert.equal(view.walkingGif,true);
   assert.equal(view.motion.facing,'left');
-  advance(400);
+  advance(850);
   assert.equal(view.motion,undefined);
   assert.equal(pet.away,false);
  }finally{pet.dispose();}
@@ -199,7 +199,7 @@ test('一次自主散步按散步停留时长返回，独立于手动拖离计�
   pet.configure({enabled:true,scope:'nearby',interval:30,distance:75,dwell:1});
   mock.timers.tick(30000);
   assert.equal(state.strolling,true);
-  for(let i=0;i<100;i++)mock.timers.tick(16);
+  for(let i=0;i<190;i++)mock.timers.tick(16);
   assert.equal(state.away,false);
   assert.equal(state.strolling,false);
   mock.timers.tick(15000);

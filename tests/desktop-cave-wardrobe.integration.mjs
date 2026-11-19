@@ -30,7 +30,24 @@ async function openWardrobe() {
  await page.getByRole('heading', { name: '衣柜' }).waitFor();
 }
 
-async function verifyViews(slider) {
+async function verifyViews(slider, atlas=false) {
+ if(atlas){
+  const figure=slider.locator('.wardrobe-turntable-figure[data-ready="true"]');
+  await figure.waitFor();
+  const positions=new Set();
+  await slider.press('Home');
+  for(let angle=0;angle<360;angle+=45){
+   assert.equal(await slider.getAttribute('aria-valuenow'),String(angle));
+   positions.add(await figure.locator('image').evaluate(node=>[node.getAttribute('x'),node.getAttribute('y')].join(',')));
+   await slider.press('ArrowRight');
+  }
+  assert.equal(positions.size,8);
+  for(const [index,name] of ['正面','侧面','背面','另一侧'].entries()){
+   await button(name).click();
+   assert.equal(await slider.getAttribute('aria-valuenow'),String(index*90));
+  }
+  return;
+ }
  const images = new Set();
  const image = slider.locator('img');
  for (const [index, name] of ['正面', '侧面', '背面', '另一侧'].entries()) {
@@ -66,25 +83,29 @@ try {
  const wardrobe = page.getByRole('region', { name: '山洞解锁服装' });
  const slider = wardrobe.getByRole('slider');
  const cards = wardrobe.locator('.cave-wardrobe-grid');
- assert.equal(await cards.getByRole('button').count(), Object.keys(outfits).length);
+ assert.equal(await cards.getByRole('button').count(),6);
+ for(const retired of ['tang','rain']){
+  assert.equal((await page.evaluate(id=>window.kanshan.saveCaveOutfit(id),retired)).ok,false);
+ }
  await verifyViews(slider);
  for (const name of Object.values(outfits)) {
   await cards.getByRole('button', { name, exact: true }).click();
   assert.equal(await slider.getAttribute('aria-valuenow'), '0');
-  await verifyViews(slider);
+  await verifyViews(slider,true);
  }
  assert.equal((await status()).outfit, null);
  await button('关闭预览').click();
  await button('换装').click();
  await wardrobe.getByRole('heading', { name: '默认蓝白外观' }).waitFor();
- await cards.getByRole('button', { name: outfits.tang, exact: true }).click();
+ await cards.getByRole('button', { name: outfits.ming, exact: true }).click();
+ await slider.locator('.wardrobe-turntable-figure[data-ready="true"]').waitFor();
 
  for (const [width, height] of [[900, 740], [600, 560]]) {
   await app.evaluate(({ BrowserWindow }, size) => BrowserWindow.fromId(1).setSize(...size), [width, height]);
   await page.waitForFunction(([w,h]) => innerWidth === w && innerHeight === h, [width, height]);
   await slider.press('Home');
   await slider.press('ArrowLeft');
-  assert.equal(await slider.getAttribute('aria-valuenow'), '270');
+  assert.equal(await slider.getAttribute('aria-valuenow'), '315');
   await slider.press('ArrowRight');
   assert.equal(await slider.getAttribute('aria-valuenow'), '0');
   const box = await slider.boundingBox();
@@ -107,19 +128,19 @@ try {
  }
 
  await button('确认穿上').click();
- await page.locator('.home-companion [data-cave-outfit="tang"]').waitFor();
- assert.equal((await status()).outfit, 'tang');
+ await page.locator('.home-companion [data-cave-outfit="ming"]').waitFor();
+ assert.equal((await status()).outfit, 'ming');
  await app.close();
  app = undefined;
  await start();
- await page.locator('.desktop-pet [data-cave-outfit="tang"]').waitFor();
+ await page.locator('.desktop-pet [data-cave-outfit="ming"]').waitFor();
  await openWardrobe();
- await page.getByRole('heading', { name: outfits.tang }).waitFor();
+ await page.getByRole('heading', { name: outfits.ming }).waitFor();
  assert.equal(await button('确认穿上').isDisabled(), true);
  await button('恢复默认').click();
  await page.getByRole('heading', { name: '默认蓝白外观' }).waitFor();
  assert.equal((await status()).outfit, null);
- console.log('通过：真实彩蛋解锁、13 组静态旋转视角、大小窗口拖动、试穿取消与重启保存。');
+ console.log('通过：真实彩蛋解锁、6 套 × 8 角度、大小窗口拖动、试穿取消与重启保存。');
 } finally {
  await app?.close();
  await rm(profile, { recursive: true, force: true });

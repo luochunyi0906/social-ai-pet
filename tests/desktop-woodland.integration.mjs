@@ -47,7 +47,7 @@ export async function run() {
     await page.waitForFunction(async () => (await window.kanshan.load()).ok);
   }
   const button = (name) => page.getByRole('button', {name,exact:true});
-  const fromDesktop = () => page.locator('.pet-fox .fox-nose').dblclick();
+  const fromDesktop = () => page.locator('.pet-fox .fox-costume-hit').dblclick();
   const area = () => app.evaluate(({screen}) => screen.getPrimaryDisplay().workArea);
   async function pointFor(selector) {
     const box = await page.locator(selector).boundingBox();
@@ -121,7 +121,7 @@ export async function run() {
       await page.waitForTimeout(100);
       const routedBlank=await pointer('route',info.front.x+5,info.front.y+5);
       assert.equal(routedBlank,back,JSON.stringify({info,front,back,routedBlank, below:await pointer('route',info.front.x+5,info.front.y+5,front)}));
-      const nose=await pointFor('.pet-fox .fox-nose');
+      const nose=await pointFor('.pet-fox .fox-costume-hit');
       await pointer('warp',info.front.x+nose.x,info.front.y+nose.y);
       await page.waitForTimeout(100);
       assert.equal(await pointer('route',info.front.x+nose.x,info.front.y+nose.y),front,'System mouse-down routing should hit fox artwork');
@@ -257,7 +257,7 @@ export async function run() {
       };
     });
     assert.equal(await page.locator('.pet-menu').count(),0);
-    await page.locator('.pet-fox .fox-nose').click({button:'right'});
+    await page.locator('.pet-fox .fox-costume-hit').click({button:'right'});
     const menu=await app.evaluate(async ()=>{
       while(!globalThis.woodlandMenu)await new Promise(resolve=>setTimeout(resolve,10));
       return globalThis.woodlandMenu.labels;

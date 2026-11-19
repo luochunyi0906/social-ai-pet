@@ -41,6 +41,7 @@
 
 ## 备份和回退
 
+本轮更新前保留点为 `/tmp/kanshan-roam-stickers.a62UeT`。其中 `source.tar` 是修改前的源码、测试和适配说明，`release-baseline/看山有伴.app` 是之前在本机运行的应用。若部署前存在会话或窗口偏好，其原件在仅本机访问的 `profile-before/`。
 
 1. 在桌宠菜单退出。将现有 `release/看山有伴.app` 移到临时目录保留，再把 `release-baseline/看山有伴.app` 放回工程 `release/`。
 2. 如果新版已保存手动表情，先将 `~/Library/Application Support/看山有伴-林间预览/chat-v1.json` 移到安全位置，保留这一份新版历史。将 `profile-before/chat-v1.json` 恢复原路径后再启动旧应用。若更新前无该文件，则保留空缺。旧应用不认识独立的用户表情消息。需要恢复旧散步偏好时可同样复原 `window-preferences.json`。

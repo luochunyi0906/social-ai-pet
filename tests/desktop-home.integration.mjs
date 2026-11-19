@@ -3,7 +3,7 @@ import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -36,7 +36,7 @@ const stored=async()=>JSON.parse(await readFile(userPrefs,'utf8')).outfitId;
 const api=async (method,...args)=>page.evaluate(([name,params])=>window.kanshan[name](...params),[method,args]);
 async function launch(){
  app=await electron.launch({
-  executablePath:join(root,process.env.KANSHAN_PACKAGE_DIR||'release','看山有伴.app/Contents/MacOS/Kanshan'),
+  executablePath:resolve(root,process.env.KANSHAN_PACKAGE_DIR||'release','看山有伴.app/Contents/MacOS/Kanshan'),
   env:{...process.env,KANSHAN_DATA_DIR:profile}, timeout:20000
  });
  page=await app.firstWindow();
@@ -99,7 +99,7 @@ async function dragOutfit(){
 }
 try{
  await launch();
- await page.locator('.pet-fox .fox-nose').dblclick();
+ await page.locator('.pet-fox .fox-costume-hit').dblclick();
  await has(btn('进入暖木小屋'));
  await page.locator('.camp-journal').click();
  await has(page.getByText('小屋升级前的收藏',{exact:true}).first());
@@ -160,19 +160,16 @@ try{
 
 
  await openCloset();
- assert.equal(await closet().locator('.home-outfit-card').count(),14);
+ assert.equal(await closet().locator('.home-outfit-card').count(),1);
  await forestCard().click();
  await btn('查看实际效果').click();
- assert.equal(await closet().locator('.home-preview image').evaluate(element=>element.getAttribute('href').includes('.gif')),true);
- assert.match(await closet().locator('.home-preview image').getAttribute('filter'),/^url\(#.+\)$/);
- assert.equal(await closet().locator('.home-preview feMorphology').getAttribute('operator'),'erode');
- await forestCard().locator('.home-thumb img').evaluate(img=>img.decode());
+ await has(closet().locator('.home-preview-stage [data-classic-garment="forest-guide"]'));
  await closet().locator('.home-preview-stage').screenshot({path:join(artifacts,'forest-guide-detail.png')});
  await snap('03-睡眠中预览森林引路者');
  await btn('关闭预览').click();
  await hasNot(closet());
  await openCloset();
- assert.match(await closet().locator('.home-outfit-card').filter({hasText:'默认装扮'}).innerText(),/正在穿着/);
+ assert.equal(await closet().getByRole('heading',{name:'默认装扮',exact:true}).isVisible(),true);
  await forestCard().click();
 
  // Simulate one unavailable runtime resource at the image decode boundary.
@@ -279,14 +276,14 @@ try{
  await openCloset();
  await btn('恢复默认装扮').click();
  assert.equal(await stored(),'default');
- await has(room().locator('.home-companion .fox-nose'));
+ await has(room().locator('.home-companion .fox-costume-hit'));
  await btn('关闭预览').click();
  await btn('收回桌面').click();
- await has(page.locator('.pet-fox .fox-nose'));
+ await has(page.locator('.pet-fox .fox-costume-hit'));
  assert.deepEqual(await bounds(),position);
  mark('重启保留确认的套装与位置，按规则正常醒来；恢复默认有效，旧收藏字节未改');
 
- await page.locator('.pet-fox .fox-nose').dblclick();
+ await page.locator('.pet-fox .fox-costume-hit').dblclick();
  await enterHome();
  await app.evaluate(({BrowserWindow})=>BrowserWindow.fromId(1).setSize(600,560));
  await page.waitForFunction(()=>innerWidth===600);

@@ -1,0 +1,11 @@
+# 森林引路者原版衣柜
+
+「暖木小屋 → 换装」只提供森林引路者。左右拖动或用方向键查看八个视角，点击「穿上」保存。原稿正面来自 `INFJ_001.png`。按「恢复默认装扮」可回到白色原貌。开启自动天气换装后，原版遇冷或热仍显示白色原貌，已解锁的戴帽雨衣按降雨条件触发。
+
+压缩包原稿是 320 × 320 透明图。32 张 PNG 与预览 GIF 保留原始文件。立绘中使用原始待机和水晶动作，走跑、攀爬、翻越、停靠和下落使用补绘方向图与分层动作。每张补绘图取角色的主要连通区域，去除透明噪点，统一脚底位置，再生成 WebP 转台和动作视图。
+
+## 补绘提示
+
+工具为内置 imagegen，参考图是 `INFJ_001.png`。
+
+> Create a strict 4-column by 2-row sprite atlas of ONLY the supplied forest guide 3D mascot from different horizontal camera angles on genuine transparent background, equal-size cells, landscape aspect ratio. Preserve the specific original sprite exactly as a model: off-white oval body, small upright pointed ears poking out of dark moss-green pointed/trailing open hood, two tiny black eyes, one large round black nose, small matte black mitten hands and feet, ankle-length layered moss-green embroidered cloak trimmed in gold leaf motifs, same brass front closure, little brown leather crossbody bag at his right hip (screen left in the supplied image), vertical curled chestnut wood staff in his left hand (screen right in supplied image), same luminous green crystal and just two small moss leaves. Same exact simple white fox proportions, materials, palette and garment design. Rotate the same model on a level camera turntable. Eight upright matching isolated full body figures, centered with very generous transparent spacing and equal entire character height incl the staff. Cell order, top row: direct front 0 degrees with bag on screen left; front three-quarter nose points screen LEFT 45; exact side profile nose points screen LEFT 90; rear three-quarter facing screen LEFT 135. Bottom row: exact rear 180 with no visible face/nose whatsoever and padded green back of hood; rear three-quarter facing screen RIGHT 225; exact side profile nose points screen RIGHT 270; front three-quarter nose points screen RIGHT 315. Staff and bag stay in the same physical hands for every view, rotate with model, no extra staff. No letters, numbers, cell borders, backdrop, ground, floor, cast shadow, or decorative items. Keep all characters and staffs fully visible with extra padding, separated from each other. Match the reference's polished game asset render and neutral lighting.

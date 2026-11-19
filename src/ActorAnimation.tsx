@@ -12,6 +12,7 @@ export type ActorMotion={
  since:number;
  until:number|null;
  facing?:'left'|'right';
+ speed?:number;
 };
 
 type ActorEvents={request:RequestAnimation;feedback:(clip:AnimationFeedback)=>void;clear:()=>void};

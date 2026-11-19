@@ -1,11 +1,10 @@
 .pet-fox > .fox .weather-art path,.pet-fox > .fox .window-snow circle {pointer-events:none;}
-.weather-umbrella {transform-origin:180px 65px;animation:open-umbrella .55s ease-out both;}
+.fox-appearance[data-raincoat][data-pet-appearance="human"] {transform-origin:50% 43%;}
+.fox-appearance[data-pet-appearance="fox"]:is([data-raincoat],[data-cave-outfit])[data-window-pose="climb"] {transform-origin:50% 55%;}
 .weather-glasses {animation:put-on-glasses .65s ease-out both;}
-.weather-parka {animation:tuck-in .6s ease-out both;}
-@keyframes open-umbrella {from{opacity:0;scale:.48 .25}to{opacity:1;scale:1}}
 @keyframes put-on-glasses {from{opacity:0;translate:0 -8px}to{opacity:1;translate:0 0}}
-@keyframes tuck-in {from{opacity:0;translate:0 7px}to{opacity:1;translate:0 0}}
-.fox[data-window-pose] {transform-origin:50% 68%;}
+.fox[data-window-pose] {transform-origin:50% 79%;--fall-tilt:1;}
+.fox[data-window-side="0"] {--fall-tilt:-1;}
 .fox[data-window-pose] .arm,.fox[data-window-pose] .leg,.fox[data-window-pose] .fox-torso,.fox[data-window-pose] .fox-face {transform-box:fill-box;transform-origin:center;}
 .fox[data-window-pose="look"] .fox-face {animation:window-look .55s ease-out both;}
 .fox[data-window-pose="approach"] .leg-left,.fox[data-window-pose="walk-away"] .leg-left {animation:window-step .32s ease-in-out infinite alternate;}
@@ -16,14 +15,15 @@
 .fox[data-window-pose="climb"] .leg-right {animation:window-kick .4s -.38s ease-in-out infinite alternate-reverse;}
 .fox[data-window-side="0"][data-window-pose="climb"] {rotate:9deg;}
 .fox[data-window-side="1"][data-window-pose="climb"] {rotate:-9deg;}
+.fox-classic-model:is([data-raincoat],[data-classic-garment])[data-window-pose="climb"] {transform-origin:50% 50%;}
 .fox[data-window-pose="pull"] .arm {animation:window-pull .65s ease-out both;}
 .fox[data-window-pose="perch"] .leg-left {animation:window-swing .7s ease-in-out infinite alternate;}
 .fox[data-window-pose="perch"] .leg-right {animation:window-swing .74s -.6s ease-in-out infinite alternate-reverse;}
 .fox[data-window-pose="perch"] .fox-torso,.fox[data-window-pose="perch"] .fox-face {translate:0 13px;}
-.fox[data-window-pose="balance"] {animation:window-balance .32s ease-in-out both;}
-.fox[data-window-pose="fall"] {animation:window-fall .72s ease-in-out both;}
-.fox[data-window-pose="fall"] .arm {rotate:-40deg;}
-.fox[data-window-pose="land"] {animation:window-land .35s ease-out both;}
+.fox[data-window-pose="balance"] {animation:window-balance .26s ease-in-out both;}
+.fox[data-window-pose="fall"] {animation:window-fall .72s ease-out both;}
+.fox[data-pet-appearance="fox"][data-window-pose="balance"] {animation:legacy-window-balance .32s ease-in-out both;}
+.fox[data-pet-appearance="fox"][data-window-pose="fall"] {animation:legacy-window-fall .72s ease-in-out both;}
 .fox[data-window-pose="shake"] .arm-left {animation:window-pat .22s ease-in-out 3 alternate;}
 .fox[data-window-pose="shake"] .arm-right {animation:window-pat .22s -.12s ease-in-out 3 alternate-reverse;}
 .window-snow circle {animation:snow-off .7s ease-out both;}
@@ -34,9 +34,11 @@
 @keyframes window-kick {from{rotate:-13deg;translate:-3px -16px}to{rotate:20deg;translate:2px 1px}}
 @keyframes window-pull {0%{rotate:-55deg;translate:0 -40px}50%{rotate:-22deg;translate:0 -20px}100%{rotate:0deg;translate:0 0}}
 @keyframes window-swing {from{rotate:-12deg;translate:0 7px}to{rotate:10deg;translate:0 2px}}
-@keyframes window-balance {0%{rotate:0deg}60%{rotate:-15deg}100%{rotate:12deg}}
-@keyframes window-fall {from{rotate:12deg}55%{rotate:-20deg}to{rotate:0deg}}
-@keyframes window-land {0%{scale:1}28%{scale:1.08 .91}55%{scale:.97 1.02}100%{scale:1}}
+@keyframes window-balance {0%{rotate:0deg}42%{rotate:calc(-4deg * var(--fall-tilt))}100%{rotate:calc(7deg * var(--fall-tilt))}}
+@keyframes window-fall {0%{rotate:calc(7deg * var(--fall-tilt))}35%{rotate:calc(11deg * var(--fall-tilt))}100%{rotate:0deg}}
+@keyframes legacy-window-balance {0%{rotate:0deg}60%{rotate:-15deg}100%{rotate:12deg}}
+@keyframes legacy-window-fall {from{rotate:12deg}55%{rotate:-20deg}to{rotate:0deg}}
+@keyframes window-land {0%,100%{translate:0 0;}34%{translate:0 3px;}65%{translate:0 -1px;}}
 @keyframes window-pat {from{rotate:0deg}to{rotate:32deg;translate:8px -8px}}
 @keyframes snow-off {0%{opacity:0;transform:translateY(-6px)}22%{opacity:1}100%{opacity:0;transform:translateY(30px)}}
 .fox-motion-frame {overflow:hidden;pointer-events:none;}
@@ -47,7 +49,7 @@
 .fox-appearance[data-window-pose] {transform-origin:50% 79%;}
 .fox-appearance[data-window-pose="look"] {animation:fox-edge-look .55s ease-out both;}
 .fox-appearance[data-window-pose="pull"] {animation:fox-pull-over .65s ease-in-out both;}
-.fox-appearance[data-window-pose="land"] {animation:fox-soft-land .35s ease-out both;}
+.fox-appearance[data-pet-appearance="fox"][data-window-pose="land"] {animation:fox-soft-land .35s ease-out both;}
 .fox-appearance[data-window-pose="shake"] {animation:fox-shake-snow .7s ease-in-out both;}
 .fox-perch-leg {transform-box:view-box;translate:0 -48px;animation:fox-perch-swing .85s ease-in-out infinite alternate;}
 .fox-perch-left {transform-origin:552px 1250px;}
@@ -88,23 +90,32 @@
 [data-pet-appearance="human"] .portrait-iris {
  translate:calc(var(--pet-gaze-x,0) * var(--pet-gaze-facing,1) * 7px) calc(var(--pet-gaze-y,0) * 5px);
 }
-.fox-appearance[data-pet-appearance="fox"][data-gesture="lift"] {transform-origin:65% 66%;}
-.fox-appearance[data-pet-appearance="human"][data-gesture="lift"] {transform-origin:57% 31%;}
-.fox-appearance[data-gesture="lift"] {animation:collar-swing .72s ease-in-out infinite alternate;}
-.fox-appearance[data-gesture="land"] {animation:fox-soft-land .34s ease-out both;}
-.fox-appearance[data-gesture="lift"] .portrait-collar {animation:collar-pull 140ms ease-out both;}
-.fox-appearance[data-gesture="land"] .portrait-collar {animation:collar-release 260ms ease-out both;}
+.portrait-drag-body {transform-box:view-box;transform-origin:65% 66%;}
+[data-pet-appearance="human"] .portrait-drag-body {transform-origin:57% 31%;}
+[data-grip-pose="face-down"] .portrait-drag-body {transform-origin:41% 36%;}
+.fox-appearance:is([data-gesture="lift"],[data-gesture="land"]) {animation:none;}
+.portrait-collar {opacity:0;translate:0 var(--collar-rest);transition:opacity .24s ease,translate .27s ease-out;}
+.fox-appearance[data-gesture="lift"] .portrait-collar {opacity:1;translate:0 0;transition-duration:.14s;}
+.portrait-standing {transform-box:view-box;transform-origin:41% 48%;transition:rotate .22s ease-out,opacity .16s ease-out;}
+.portrait-held {opacity:0;transition:opacity .16s ease-out;}
+[data-grip-pose="face-down"][data-gesture="lift"] .portrait-standing {rotate:23deg;opacity:0;}
+[data-grip-pose="face-down"][data-gesture="lift"] .portrait-held {opacity:1;transition-delay:.045s;}
 .fox[data-gesture="lift"] .classic-coat-collar {transform:translateY(-9px);}
 .fox[data-gesture="land"] .classic-coat-collar {animation:classic-collar-release 260ms ease-out both;}
 @keyframes classic-collar-release {from{transform:translateY(-9px);}to{transform:translateY(0);}}
-@keyframes collar-swing {from{rotate:-2.5deg;}to{rotate:3deg;}}
-@keyframes collar-pull {from{translate:0 var(--collar-rest);opacity:0;}to{translate:0 0;opacity:1;}}
-@keyframes collar-release {from{translate:0 0;opacity:1;}to{translate:0 var(--collar-rest);opacity:0;}}
 @media(prefers-reduced-motion:reduce){
- .portrait-gaze,.portrait-iris,.pet-fox .pet-gaze-dot {transition:none;}
- .fox-appearance[data-gesture="land"] .portrait-collar {opacity:0;}
+ .portrait-gaze,.portrait-iris,.pet-fox .pet-gaze-dot,.portrait-collar,.portrait-standing,.portrait-held {transition:none;}
 }
 @keyframes portrait-look {30%,68%{rotate:-3deg;translate:0 -3px}}
 @keyframes tears {from{opacity:.55;translate:0 -2px}to{opacity:1;translate:0 3px}}
 @keyframes lift-swing {from{rotate:-5deg}to{rotate:6deg}}
 @media(prefers-reduced-motion:reduce){.fox[data-gesture],.fox[data-gesture] *{animation:none!important}}
+
+.fox-wardrobe-leaving {animation:fox-wardrobe-dissolve .14s ease-out both;pointer-events:none;}
+.fox-wardrobe-step-in {animation:fox-wardrobe-step-in .13s ease-out both;}
+@keyframes fox-wardrobe-dissolve {to{opacity:0;}}
+@keyframes fox-wardrobe-step-in {from{translate:0 2px;}to{translate:0 0;}}
+@media(prefers-reduced-motion:reduce){
+ .fox-wardrobe-leaving {display:none;}
+ .fox-wardrobe-step-in {animation:none;}
+}

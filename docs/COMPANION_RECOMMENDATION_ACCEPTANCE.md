@@ -27,6 +27,7 @@
 
 ## 回退
 
+完整开发开始前的源码快照为 `/tmp/kanshan-companion-rollback.mTSnXU/source.tar.gz`，SHA-256 为 `1a5f0775c60469e97e2bd2b88c22823b12edd6f6eed783fec6c9a66cfa00a769`。新增推荐前的快照为 `/tmp/kanshan-recommendation-rollback.soAvOO/source.tar.gz`。系统退出桌宠后可换回保留的上一个签名应用。回退前保留最新源码和用户资料，按变更范围恢复源码或替换应用，原手账、会话与本机配置留在应用数据目录。
 
 ## 源码索引
 
@@ -43,3 +44,4 @@
 - 真实问题回答返回摘要和服务偏移。缺失偏移中止、空结果和各业务错误通过模拟测试。共享额度真实接口返回 `question_discovery`。
 - 89 项单测通过。专注标记、睡眠、稍后、当天安静及普通日常开场在受控时钟下核对。未等设备自然跨日，也未完全退出当前 Codex 客户端再试。
 - 900 × 740 逻辑像素截图按 CSS 像素从实际桌面窗口导出，五条例题在同一屏可见。文件在 `artifacts/companion-extension/`，同目录 `acceptance.json` 是脱敏的实机记录。
+- 旧签名包已保留于 `/tmp/kanshan-companion-rollback.mTSnXU/看山有伴.app`。

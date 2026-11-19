@@ -37,7 +37,7 @@ async function visit(){
  await video().waitFor();
 }
 async function showPicker(){
- await page.locator('.pet-fox .fox-nose').dblclick();
+ await page.locator('.pet-fox .fox-costume-hit').dblclick();
  await button('和刘看山互动，可双击打开聊天').dblclick();
  await button('刘看山的表情').click();
  await picker().waitFor();

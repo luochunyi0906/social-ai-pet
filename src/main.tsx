@@ -9,12 +9,15 @@ import{ActorEventsContext,useActorAnimation}from'./ActorAnimation';
 import{HotList}from'./HotList';
 import{RoamingCompanion}from'./RoamingCompanion';
 import{CompanionInvitation}from'./CompanionInvitation';
-import{checkOutfit,DEFAULT_OUTFIT,findOutfit,loadIdle}from'./outfits';import{ModelPanel}from'./ModelPanel';import{unwrap,type Question,type Favorite,type Garden,type ModelStatus,type Post,type SearchResponse,type CompanionChoice,type CompanionState}from'./types';import'./style.css';import{INITIAL_STATE,nextBehavior}from'./shared/behavior.mjs';
+import{checkOutfit,DEFAULT_OUTFIT,findOutfit,loadIdle}from'./outfits';import{ModelPanel}from'./ModelPanel';import{unwrap,type Question,type Favorite,type Garden,type ModelStatus,type HumanWeather,type Post,type SearchResponse,type CompanionChoice,type CompanionState}from'./types';import'./style.css';import{INITIAL_STATE,nextBehavior}from'./shared/behavior.mjs';
 import{feedingJourney,phaseLabels,type FeedingPhase}from'./feeding';
 import{Snowfall}from'./Snowfall';
 import {AppearancePicker} from './PetAppearance';
+import {prepareFoxWardrobe} from './FoxWardrobeArt';
 import {CaveCompanion,CaveReveal} from './CaveReveal';
 import {useDaydream} from './useDaydream';
+import {useListening} from './useListening';
+import {ListeningPanel} from './PetInteractionPanels';
 import type {WeatherStatus} from './types';
 import './live-actor.css';
 import type {PetAppearance} from './types';
@@ -84,9 +87,11 @@ const [appearanceError,setAppearanceError]=useState('');
 const appearanceWrite=useRef(false);
 const [caveReveal,setCaveReveal]=useState<{ticket:Promise<string|null>}>();
 const [newCaveGift,setNewCaveGift]=useState(false);
-const [wardrobe,setWardrobe]=useState({unlocked:false,outfit:null as string|null,hintSeen:true});
+const [wardrobe,setWardrobe]=useState({unlocked:false,outfit:null as string|null,humanWeather:null as HumanWeather|null,hintSeen:true});
 const [wardrobeGlint,setWardrobeGlint]=useState(false);
 const [weather,setWeather]=useState<WeatherStatus>();
+const [petInteraction,setPetInteraction]=useState<'listen'>();
+const {status:listening,choose:chooseListening}=useListening();
 const {daydream,wakeDaydream}=useDaydream(appearance==='fox'&&surface==='pet'&&windowVisible&&!sleeping&&!paused&&!quiet);
 const outfitWrite=useRef(false);
 const [outfitCue,setOutfitCue]=useState(0);
@@ -145,11 +150,13 @@ function resetCaveClicks(){
  void bridge?.resetCaveVisit();
 }
 function returnToDesktop(){
+ setPetInteraction(undefined);
  resetCaveClicks();
  setNewCaveGift(false);
  animation.clear();cancel();interact('idle');setHomeOpen(false);setHotOpen(false);setFeed(false);setCaveOpen(false);setModelOpen(false);setSearchQuery(null);setChatOpen(false);setFreshOpening(undefined);setSurface('pet');void bridge?.surface('pet');
 }
 function showPanel(name:string,openingId?:string){
+ setPetInteraction(name==='listen'?name:undefined);
  resetCaveClicks();
  setNewCaveGift(false);
  if(name==='cave')animation.feedback('emo_curious');
@@ -162,6 +169,11 @@ function showPanel(name:string,openingId?:string){
  setChatNavigation(undefined);
  if(name!=='journal')setJournalNavigation(undefined);
  if(name==='chat')setChatSource(null);
+}
+async function wearHumanWeather(id:HumanWeather|null){
+ if(!bridge)throw Error('请使用桌面应用。');
+ const saved=await unwrap(bridge.saveHumanWeather(id));
+ setWardrobe(previous=>({...previous,humanWeather:saved}));
 }
 function playCaveReveal(){
  if(caveReveal||!caveOpen||busy||feed||chatOpen||modelOpen||searchQuery!==null)return;
@@ -181,6 +193,7 @@ async function receiveCaveGift(ticket:Promise<string|null>){
  }catch(error){setError((error as Error).message);}
 }
 async function wearCaveOutfit(id:string|null){
+ if(id)await prepareFoxWardrobe(id);
  if(!bridge)return;
  const outfit=await unwrap(bridge.saveCaveOutfit(id));
  setWardrobe(previous=>({...previous,outfit}));
@@ -232,7 +245,7 @@ function openHot(quick=false){
 useEffect(()=>{
  if(!bridge?.hotTick)return;
  let active=true;
- const mode=sleeping||paused||!windowVisible?'sleep':surface==='panel'||roam.dragging||roam.walking||roam.strolling||interaction==='lift'?'busy':quiet?'focus':'normal';
+ const mode=sleeping||paused||!windowVisible?'sleep':surface==='panel'||petInteraction||roam.dragging||roam.walking||roam.strolling||interaction==='lift'?'busy':quiet?'focus':'normal';
  async function tick(){
   if(!bridge)return;
   const hot=await unwrap(bridge.hotTick(hotOpen||mode==='sleep'?'sleep':mode==='normal'?'normal':'focus'))
@@ -293,6 +306,13 @@ useEffect(()=>{
  return()=>{active=false;unsubscribe();document.removeEventListener('visibilitychange',pageVisibility);};
 },[]);
 useEffect(()=>{if(!windowVisible||paused)resetCaveClicks();},[windowVisible,paused]);
+useEffect(()=>{
+ if(petInteraction&&(!windowVisible||paused||quiet||sleeping))returnToDesktop();
+},[petInteraction,windowVisible,paused,quiet,sleeping]);
+useEffect(()=>{
+ if(!petInteraction)return;
+ return bridge?.onSuspend(returnToDesktop);
+},[petInteraction]);
 async function toggleSnow(){
  if(!bridge||snowSaving)return;
  setSnowSaving(true);
@@ -355,10 +375,10 @@ async function savePost(post:Post,hot=false){
 }
 const actor=nextBehavior({...INITIAL_STATE,paused:paused||!windowVisible,sleeping},behaviorTick,quiet,phase,interaction);const actorAction=actor.action,reason=actor.reason;
 useEffect(()=>{
- void bridge?.roamUpdate?.({outfitId,action:actorAction,sleeping,motion,daydream,motionEnabled:!paused&&windowVisible,
+ void bridge?.roamUpdate?.({outfitId,action:actorAction,sleeping,motion,daydream,motionEnabled:!paused&&!quiet&&!sleeping&&windowVisible,
   weatherBlocked:caveReveal!==undefined||interaction==='lift'||interaction==='land'||interaction==='upset',
-  blocked:guideOpen||sleeping||quiet||paused||!windowVisible||chatOpen||homeOpen||hotOpen||caveOpen||feed||modelOpen||searchQuery!==null||busy});
-},[outfitId,appearance,actorAction,sleeping,daydream,quiet,paused,windowVisible,chatOpen,homeOpen,hotOpen,caveOpen,feed,modelOpen,searchQuery,busy,motion.clip,motion.stage,motion.since,motion.until,weather,wardrobe,caveReveal,interaction]);
+  blocked:guideOpen||sleeping||quiet||paused||!windowVisible||petInteraction!==undefined||chatOpen||homeOpen||hotOpen||caveOpen||feed||modelOpen||searchQuery!==null||busy});
+},[guideOpen,outfitId,appearance,actorAction,sleeping,daydream,quiet,paused,windowVisible,chatOpen,homeOpen,hotOpen,caveOpen,feed,modelOpen,searchQuery,busy,motion.clip,motion.stage,motion.since,motion.until,weather,wardrobe,caveReveal,interaction,petInteraction]);
 function acceptSearch(result:SearchResponse){
  setPosts(result.results);setSearchReport(result);setShowPartial(false);setPostQuery(result.query);setSearched(true);setCaveOpen(true);
 }
@@ -377,7 +397,7 @@ const invite=availableOffer?<CompanionInvitation offer={availableOffer} choices=
 function dismissNotice(){
  if(windowPlayNotice)setWindowPlayNotice('');else setError('');
 }
-const scene=surface==='pet'?<div onDragEnter={dragEnter} onDragLeave={dragLeave} onDragOver={e=>{if(e.dataTransfer.types.includes('Files'))e.preventDefault();}} onDrop={drop}><DesktopPet places={places} setPlaces={setPlaces} action={actorAction} reason={reason} onOpen={showPanel} onInteraction={interact} paused={paused} quiet={quiet} sleeping={sleeping} onWake={()=>sleep(false)} snow={snow&&windowVisible} hotReminder={hotBadge&&!sleeping} hotNotice={hotNotice&&!quiet&&!paused} onHot={()=>openHot(true)} away={roam.away} invitation={invite} weather={weather}/>{(windowPlayNotice||error)&&<div className="pet-error" data-hit role="alert">{windowPlayNotice||error}<button type="button" aria-label="关闭提示" onClick={dismissNotice}>×</button></div>}</div>: <main data-hit onContextMenu={e=>{e.preventDefault();void bridge?.menu();}} onDragEnter={dragEnter} onDragLeave={dragLeave} onDragOver={e=>{if(e.dataTransfer.types.includes('Files')){e.preventDefault();e.dataTransfer.dropEffect=busy?'none':'copy';}}} onDrop={drop}
+const scene=surface==='pet'?<div onDragEnter={dragEnter} onDragLeave={dragLeave} onDragOver={e=>{if(e.dataTransfer.types.includes('Files'))e.preventDefault();}} onDrop={drop}><DesktopPet places={places} setPlaces={setPlaces} action={actorAction} reason={reason} onOpen={showPanel} onInteraction={interact} paused={paused} quiet={quiet} sleeping={sleeping} onWake={()=>sleep(false)} snow={snow&&windowVisible} hotReminder={hotBadge&&!sleeping} hotNotice={hotNotice&&!quiet&&!paused} onHot={()=>openHot(true)} away={roam.away} invitation={invite} weather={weather} listening={listening} visible={windowVisible}/>{(windowPlayNotice||error)&&<div className="pet-error" data-hit role="alert">{windowPlayNotice||error}<button type="button" aria-label="关闭提示" onClick={dismissNotice}>×</button></div>}</div>: <main data-hit onContextMenu={e=>{e.preventDefault();void bridge?.menu();}} onDragEnter={dragEnter} onDragLeave={dragLeave} onDragOver={e=>{if(e.dataTransfer.types.includes('Files')){e.preventDefault();e.dataTransfer.dropEffect=busy?'none':'copy';}}} onDrop={drop}
  className={`camp-shell ${roam.away?'companion-away':''} ${caveOpen?'cave-open':''} ${paused?'paused':''} ${quiet||sleeping?'quiet':''}`}>
  {!homeOpen&&!hotOpen&&snow&&windowVisible&&!paused&&!quiet&&!sleeping&&<Snowfall surface="camp"/>}
  <div hidden={homeOpen||hotOpen} className="camp-view">
@@ -389,7 +409,8 @@ const scene=surface==='pet'?<div onDragEnter={dragEnter} onDragLeave={dragLeave}
   onHome={()=>showPanel('home')} onCave={()=>showPanel('cave')} onFeed={()=>showPanel('feed')} onChat={()=>showPanel('chat')} onSettings={()=>showPanel('settings')} onReturn={returnToDesktop}/>
  </div>
  {homeOpen&&<HomeRoom sleeping={sleeping} action={actorAction} outfitId={outfitId} changing={outfitChanging}
-  caveAvailable={appearance==='fox'&&wardrobe.unlocked} caveOutfit={wardrobe.outfit} onCaveWear={wearCaveOutfit} wardrobeGlint={wardrobeGlint}
+  appearance={appearance} wardrobeUnlocked={wardrobe.unlocked} caveOutfit={wardrobe.outfit} onCaveWear={wearCaveOutfit} wardrobeGlint={wardrobeGlint}
+  humanWeather={wardrobe.humanWeather} onHumanWear={wearHumanWeather}
   onWardrobeOpen={()=>setToast(message=>message===wardrobeUnlockNotice?'':message)}
   error={wardrobeError} onClearError={()=>setWardrobeError('')} canShowcase={!paused&&!quiet&&windowVisible} onSleep={sleep} onWear={wearOutfit} onShowcase={()=>interact('showcase')}
   onCamp={()=>setHomeOpen(false)} onCompact={returnToDesktop}/>}
@@ -420,13 +441,15 @@ const scene=surface==='pet'?<div onDragEnter={dragEnter} onDragLeave={dragLeave}
  favorites={garden.favorites} initialFavorite={chatNavigation?.favoriteId} initialSession={chatNavigation?.sessionId} initialLesson={chatNavigation?.lessonId}
  onFavorite={id=>openJournal('favorites',id)} onLesson={id=>openJournal('teaching',id)}
  onClose={()=>{setChatOpen(false);setChatNavigation(undefined);setFreshOpening(undefined);interact('idle');}} actorAction={actorAction} onActivity={interact} onSpeech={(_text,tone)=>interact('speak-'+tone)}/>}
+{petInteraction==='listen'&&windowVisible&&!paused&&!quiet&&!sleeping&&
+ <ListeningPanel status={listening} appearance={appearance} choose={chooseListening} onClose={returnToDesktop}/>}
 {modelOpen&&<ModelPanel status={status} onStatus={value=>{setStatus(value);setRecommendationRevision(revision=>revision+1);}} onClose={()=>setModelOpen(false)} onCompanionChange={()=>setReminderRevision(value=>value+1)}/>}
 
 </main>;
 return <ActorEventsContext.Provider value={animation}><CompanionProvider appearance={appearance} outfit={outfit} sleeping={sleeping} action={actorAction}
  enabled={!paused&&!quiet&&windowVisible} cue={outfitCue} motion={motion} motionEnabled={!paused&&windowVisible}
  stillIdle={surface==='pet'} daydream={daydream&&!roam.dragging} weather={weather&&(wardrobe.unlocked?weather.look:{...weather.look,clothing:'normal'})}
- caveOutfit={wardrobe.unlocked?wardrobe.outfit:null} preloadBase onError={setError}>{scene}{guideOpen&&<FirstRunGuide onClose={enterCamp => void closeGuide(enterCamp)} error={guideError} closing={guideClosing}/>}{caveReveal&&<CaveReveal onClose={resetCaveClicks}
+ caveOutfit={wardrobe.unlocked?wardrobe.outfit:null} humanWeather={wardrobe.humanWeather} weatherUnlocked={wardrobe.unlocked} onError={setError}>{scene}{guideOpen&&<FirstRunGuide onClose={enterCamp => void closeGuide(enterCamp)} error={guideError} closing={guideClosing}/>}{caveReveal&&<CaveReveal onClose={resetCaveClicks}
   onPersonRevealed={()=>void receiveCaveGift(caveReveal.ticket)}/>}</CompanionProvider></ActorEventsContext.Provider>;
 }
 const standaloneCompanion=new URLSearchParams(location.search).get('companion')==='1';

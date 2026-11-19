@@ -46,8 +46,10 @@ test('装扮偏好串行落盘、兼容旧目录、无效套装或损坏文件�
   await writeFile(garden,'existing garden');
   await Promise.all([preferences.save('forest-guide'),preferences.save('default'),preferences.save('forest-guide')]);
   assert.deepEqual(await outfitPreferences(profile).read(),{outfitId:'forest-guide'});
-  assert.throws(()=>preferences.save('../unknown'),/不可用/);
+  for(const id of ['../unknown','camp-scarf','lilac-cardigan','warm-apron'])assert.throws(()=>preferences.save(id),/不可用/);
   assert.deepEqual(JSON.parse(await readFile(filename,'utf8')),{version:1,outfitId:'forest-guide'});
+  await writeFile(filename,JSON.stringify({version:1,outfitId:'camp-scarf'}));
+  assert.equal((await preferences.read()).outfitId,'default');
   await writeFile(filename,'{ corrupt');
   assert.match((await outfitPreferences(profile).read()).warning,/无法读取/);
   assert.equal(await readFile(filename,'utf8'),'{ corrupt');

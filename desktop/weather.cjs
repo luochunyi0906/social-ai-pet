@@ -1,7 +1,7 @@
 const cities=require('./weather-cities.json');
 const RULES=Object.freeze({
  refresh:20*60000, stale:60*60000, change:60000,
- rainOn:.1,rainOff:.05,coldOn:15,coldOff:17,hotOn:28,hotOff:26,sunOn:7,sunOff:6
+ rainOn:.1,rainOff:.05,everydayMin:17,hotOn:28,hotOff:26,sunOn:7,sunOff:6
 });
 const neutral=()=>({clothing:'normal',umbrella:false,glasses:false});
 const defaults={enabled:false,city:'hong-kong'};
@@ -49,7 +49,6 @@ function climate(){
   const {time,feels,liquid,code,day,uv}=sample;
   const clothing=valueFor('clothing');
   if(feels!==undefined)observe('clothing',
-   (clothing==='cold'?feels<RULES.coldOff:feels<RULES.coldOn)?'cold':
    (clothing==='hot'?feels>RULES.hotOff:feels>RULES.hotOn)?'hot':'normal',time);
   const rain=code===undefined?undefined:rainCodes.has(code);
   if(rain===true||liquid>=RULES.rainOn)observe('umbrella',true,time);
@@ -58,7 +57,7 @@ function climate(){
   if(day===false||clear===false||uv<RULES.sunOff)observe('glasses',false,time,day===false);
   else if(day===true&&clear===true&&uv!==undefined)observe('glasses',valueFor('glasses')||uv>=RULES.sunOn,time);
   if(feels!==undefined&&code!==undefined&&liquid!==undefined)observe('everyday',
-   feels>=RULES.coldOff&&feels<=RULES.hotOff&&code<=3&&liquid<RULES.rainOff,time);
+   feels>=RULES.everydayMin&&feels<=RULES.hotOff&&code<=3&&liquid<RULES.rainOff,time);
  }
  function target(now){
   expire(now);

@@ -5,6 +5,7 @@ const fs=require('node:fs/promises');
 const {validWander,wanderSettings}=require('./roaming.cjs');
 const {validWeather}=require('./weather.cjs');
 const caveWardrobe=require('./cave-wardrobe.json');
+const humanWeather=require('./human-weather.json');
 
 const defaults = {version:1,pet:null,panel:null,snow:true};
 const validAppearance = value => value==='classic'||value==='human'||value==='fox';
@@ -23,6 +24,7 @@ function normalize(value) {
   ...(value.illustratedGuideSeen===true?{illustratedGuideSeen:true}:{}),
   ...(value.wardrobeHintSeen===true?{wardrobeHintSeen:true}:{}),
   ...(typeof value.caveOutfit==='string'&&Object.hasOwn(caveWardrobe,value.caveOutfit)?{caveOutfit:value.caveOutfit}:{}),
+  ...(typeof value.humanWeather==='string'&&Object.hasOwn(humanWeather,value.humanWeather)?{humanWeather:value.humanWeather}:{}),
   ...(validWeather(value.weather)?{weather:{enabled:value.weather.enabled,city:value.weather.city,chase:value.weather.chase===true}}:{}),
   ...(validWander(value.wander)?{wander:wanderSettings(value.wander)}:{}),
   ...(typeof value.chatStickers==='boolean'?{chatStickers:value.chatStickers}:{})};

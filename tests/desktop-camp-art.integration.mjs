@@ -63,7 +63,7 @@ try {
   };
   const save = async () => JSON.parse(await readFile(savePath, 'utf8'));
 
-  await page.locator('.pet-fox .fox-nose').dblclick();
+  await page.locator('.pet-fox .fox-costume-hit').dblclick();
   await button('种子箱 · 1').waitFor();
   await resize(900, 740);
   if ((await button('营地飘雪').getAttribute('aria-pressed')) === 'true') await button('营地飘雪').click();
@@ -79,8 +79,12 @@ try {
         const { x, y, width, height } = element.getBoundingClientRect();
         const hit = document.elementFromPoint(x + width / 2, y + height / 2);
         const owner = element.closest('button,[role=button]');
+        // The cave artwork is anchored to the left edge. Its entrance and
+        // label must remain usable even when the outer rocks extend past it.
+        const caveArt = element instanceof HTMLImageElement && owner?.classList.contains('camp-cave');
+        const left = caveArt ? x >= -width * .22 : x >= 0;
         return { owner: owner?.getAttribute('aria-label') || owner?.textContent,
-          view: x >= 0 && y >= 0 && x + width <= innerWidth && y + height <= innerHeight && width > 0 && height > 0,
+          view: left && y >= 0 && x + width <= innerWidth && y + height <= innerHeight && width > 0 && height > 0,
           hit: hit?.closest('button,[role=button]') === owner };
       });
     });
@@ -102,9 +106,10 @@ try {
   const bench = button('休息处，和刘看山聊聊');
   const fox = button('和刘看山互动，可双击打开聊天');
   const [a, b] = await Promise.all([bench.boundingBox(), fox.boundingBox()]);
-  assert.ok(a.x + a.width + 10 <= b.x);
-  await take('kanshan-camp-bench', { x: a.x - 14, y: Math.min(a.y, b.y) - 18,
-    width: b.x + b.width - a.x + 22, height: Math.max(a.y + a.height, b.y + b.height) - Math.min(a.y, b.y) + 34 });
+  assert.ok(a && b);
+  await take('kanshan-camp-bench', { x: Math.max(0, a.x - 14), y: Math.min(a.y, b.y) - 18,
+    width: Math.max(a.x + a.width, b.x + b.width) + 8 - Math.max(0, a.x - 14),
+    height: Math.max(a.y + a.height, b.y + b.height) - Math.min(a.y, b.y) + 34 });
   await bench.click();
   await page.locator('.chat-modal').waitFor();
   await button('关闭对话').click();

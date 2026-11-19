@@ -48,4 +48,4 @@
 
 ## 回退
 
-需要回滚时，先退出桌宠，再用此前保留的应用包或源码恢复。应用数据目录继续沿用。
+使用升级前的临时应用恢复点 `/var/folders/ww/0c4jm26s7bjdsmn3wxtx659r0000gn/T/kanshan-previous-app.v4bbrych/看山有伴.app`，可在退出桌宠后换回。旧源文件临时恢复包是 `/tmp/kanshan-before-zhida.uYDPTc/source.tar`。仅回退应用或源文件，沿用原本的用户配置、花园和会话存档。

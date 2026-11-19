@@ -12,11 +12,11 @@ test('天气识别单位、有效时间、独立阈值、不同样本和过期',
  assert.equal(parsed.liquid,.2);
  const state=climate();
  state.push(parsed,time);
- assert.deepEqual(state.target(time),{clothing:'cold',umbrella:true,glasses:false});
+ assert.deepEqual(state.target(time),{clothing:'normal',umbrella:true,glasses:false});
  const clear={...parsed,time:time+1000,liquid:0,feels:18};
  state.push(clear,clear.time);
  state.push(clear,clear.time);
- assert.deepEqual(state.target(clear.time),{clothing:'cold',umbrella:true,glasses:false});
+ assert.deepEqual(state.target(clear.time),{clothing:'normal',umbrella:true,glasses:false});
  state.push({...clear,time:clear.time+1000},clear.time+1000);
  assert.deepEqual(state.target(clear.time+1000),{clothing:'normal',umbrella:false,glasses:true});
  state.push({time:clear.time+2000,day:false},clear.time+2000);
@@ -27,10 +27,11 @@ test('天气识别单位、有效时间、独立阈值、不同样本和过期',
  assert.deepEqual(wet.target(time+RULES.stale+1),{clothing:'normal',umbrella:false,glasses:false});
  assert.equal(parseWeather({current_units:units,current:{time:time/1000,rain:.05}},time).liquid,undefined);
 });
-test('约 20 度且无特殊天气使用蓝白日常装，撑伞和戴墨镜优先',()=>{
+test('低温保留日常立绘，约 20 度标记温和天气，降雨和强日照独立',()=>{
  const mild={time,feels:20,liquid:0,code:1,day:true,uv:2};
  for(const [sample,expected] of [
   [mild,true],
+  [{...mild,feels:-12},undefined],
   [{...mild,code:61},undefined],
   [{...mild,code:73},undefined],
   [{...mild,uv:8},undefined],
@@ -38,6 +39,7 @@ test('约 20 度且无特殊天气使用蓝白日常装，撑伞和戴墨镜优�
   const state=climate();
   state.push(sample,time);
   assert.equal(state.target(time).everyday,expected);
+  assert.equal(state.target(time).clothing,'normal');
  }
 });
 test('桌面气温独立于自动换装，保留失败前观测并拒绝过期或异城读数',async()=>{
@@ -146,7 +148,7 @@ test('靠近可见窗口的中段侧边，自行开始攀爬并在离开后冷�
   }
  });
  try{
-  const outfit={appearance:'fox',outfitId:'default',weather:{clothing:'cold',umbrella:true}};
+  const outfit={appearance:'fox',outfitId:'default',weather:{clothing:'normal',umbrella:true}};
   const settle=async()=>{for(let n=0;n<3;n++)await Promise.resolve();};
   controller.update(outfit,false);
   controller.scanNearby();await settle();

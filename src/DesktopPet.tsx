@@ -7,7 +7,9 @@ import {Snowfall} from './Snowfall';
 import {usePetClicks} from './usePetClicks';
 import {usePetGaze} from './usePetGaze';
 import {shakeDetector} from './shared/mouse-gesture.mjs';
-import type {WeatherStatus} from './types';
+import {useCheekGesture} from './useCheekGesture';
+import {DesktopKnockArt,useDesktopKnock} from './DesktopKnock';
+import type {WeatherStatus,ListeningStatus} from './types';
 import './desktop-pet.css';
 
 export {DEFAULT_PLACES} from './shared/layout.mjs';
@@ -28,15 +30,18 @@ function Caption({title,location,context=false}:{title:string;location:{x:number
  return <span className={`pet-caption ${context?'pet-caption-context':''}`} style={{top:location.y,left:location.x,width:location.w}} aria-hidden="true">{title}</span>;
 }
 
-export function DesktopPet({action,reason,onOpen,onInteraction,paused,quiet,sleeping,onWake,snow,places,setPlaces,hotReminder,hotNotice,onHot,away,invitation,weather}:{
+export function DesktopPet({action,reason,onOpen,onInteraction,paused,quiet,sleeping,onWake,snow,places,setPlaces,hotReminder,hotNotice,onHot,away,invitation,weather,listening,visible}:{
  action:string;reason:string;onOpen:(name:string)=>void;onInteraction:(kind:string)=>void;
  paused:boolean;quiet:boolean;sleeping:boolean;onWake:()=>void;snow:boolean;places:Places;setPlaces:Dispatch<SetStateAction<Places>>;
  hotReminder?:boolean;hotNotice?:boolean;onHot?:()=>void;
- away?:boolean;invitation?:ReactNode;weather?:WeatherStatus;
+ away?:boolean;invitation?:ReactNode;weather?:WeatherStatus;listening:ListeningStatus;visible:boolean;
 }){
  const clicks=usePetClicks(()=>onOpen('camp'),onInteraction);
  const windowDrag=useWindowDrag('roam',clicks.dragAction,!paused&&!sleeping);
- const gaze=usePetGaze(!paused&&!quiet&&!sleeping&&!away&&!windowDrag.dragging);
+ const interactive=visible&&!paused&&!quiet&&!sleeping&&!away&&!windowDrag.dragging;
+ const gaze=usePetGaze(interactive);
+ const knock=useDesktopKnock(interactive,listening,clicks.interrupt);
+ const cheek=useCheekGesture(interactive&&!knock.active,()=>clicks.pick(1),clicks.interrupt,()=>onInteraction('look'));
  const campDrag=useWindowDrag('pet');
  const drag=useRef<Drag|null>(null);
  const suppress=useRef(false);
@@ -135,15 +140,29 @@ export function DesktopPet({action,reason,onOpen,onInteraction,paused,quiet,slee
   {hotReminder&&<button type="button" className={'pet-hot-reminder '+(hotNotice?'pet-hot-bubble':'')} data-hit
    aria-label="查看今日热榜" title="今日热榜已到" onClick={onHot}>{hotNotice?'今日热榜已到':'•'}</button>}
   <button ref={gaze} type="button" className={`pet-piece pet-fox ${windowDrag.dragging?'is-dragging':''} ${away?'is-away':''}`} data-hit
-   aria-label="和刘看山互动，可双击打开营地" aria-haspopup="menu" title="单击互动，双击打开营地" style={spot('fox')} {...windowDrag.bindings}
+   aria-label={knock.active?'敲一下刘看山，双指双点或 Escape 退出':'和刘看山互动，可双击打开营地'} aria-haspopup="menu" title="单击互动，双击打开营地" style={spot('fox')}
+   onPointerDown={event=>{if(!cheek.down(event))windowDrag.bindings.onPointerDown(event);}}
+   onPointerMove={event=>{if(!cheek.move(event))windowDrag.bindings.onPointerMove(event);}}
+   onPointerUp={event=>{if(!cheek.up(event))windowDrag.bindings.onPointerUp(event);}}
+   onPointerCancel={event=>{if(!cheek.cancel(event))windowDrag.bindings.onPointerCancel();}}
+   onLostPointerCapture={event=>{if(!cheek.cancel(event))windowDrag.bindings.onLostPointerCapture();}}
+   onPointerLeave={cheek.leave}
    onPointerEnter={()=>{if(!windowDrag.dragging)onInteraction('look');}}
-   onContextMenu={clicks.openMenu}
-   onKeyDown={clicks.menuKey}
-   onClick={event=>{if(event.ctrlKey||windowDrag.didDrag(event.detail))return;clicks.pick(event.detail);}}>
+   onContextMenu={knock.contextMenu} data-knocking={knock.active||undefined} data-striking={knock.striking||undefined}
+   onKeyDown={event=>{if(knock.active&&event.repeat&&(event.key===' '||event.key==='Enter'))event.preventDefault();else clicks.menuKey(event);}}
+   onClick={event=>{if(event.ctrlKey||cheek.skipClick(event.detail)||windowDrag.didDrag(event.detail))return;if(knock.active)knock.hit();else clicks.pick(event.detail);}}>
    <span className="pet-contact" aria-hidden="true"/>
-   <Companion action={action} gesture={clicks.gesture}/>
+   <Companion action={action} gesture={knock.striking?'knock':clicks.gesture} cheek={cheek.pose} faceEnabled={interactive&&!knock.active}
+    listening={interactive?listening:undefined}/>
+   <DesktopKnockArt {...knock}/>
+   {cheek.hint&&<span className="pet-cheek-hint">按住，轻轻往外拉</span>}
    <Caption title="刘看山" location={PIECES.fox.label} context/>
   </button>
+  {visible&&!paused&&!quiet&&!sleeping&&listening.mode!=='off'&&
+   <>
+    <button className="pet-listen-entry" type="button" data-hit onClick={()=>onOpen('listen')}>陪听</button>
+    {!invitation&&Date.now()-listening.changedAt<2900&&<span className="pet-listen-note" key={listening.cue}>我也听一会儿。</span>}
+   </>}
   {prop('garden')}
   {prop('cave')}
   {prop('feed')}

@@ -66,7 +66,7 @@ async function launch() {
 }
 
 async function openChat() {
-  await page.locator('.pet-fox .fox-nose').dblclick();
+  await page.locator('.pet-fox .fox-costume-hit').dblclick();
   const dialog = page.getByRole('dialog', { name: '说一点你正想着的事' });
   if (!await dialog.isVisible()) await page.getByRole('button', { name: '和刘看山互动，可双击打开聊天', exact: true }).dblclick();
   await dialog.getByText('聊天服务', { exact: false }).waitFor();

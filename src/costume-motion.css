@@ -1,0 +1,8 @@
+.classic-crystal {animation:classic-crystal .87s ease-in-out infinite alternate;}
+@keyframes classic-crystal {to{opacity:.7;filter:drop-shadow(0 0 5px #b1efbb);}}
+@media(prefers-reduced-motion:reduce){
+ .costume-rig :is(.costume-rig-body,.costume-limb,.classic-crystal){animation:none!important;}
+}
+.fox-classic-model [data-classic-garment] {animation:classic-fabric-change .15s ease-out both;}
+@keyframes classic-fabric-change {from{opacity:.83;}to{opacity:1;}}
+@media(prefers-reduced-motion:reduce){.fox-classic-model [data-classic-garment]{animation:none;}}

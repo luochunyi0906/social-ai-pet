@@ -1,12 +1,16 @@
 import { FeatureGuide } from './FeatureGuide';
 import { useEffect, useRef, useState } from 'react';
-import { Companion, CostumeArt, RestingBlanket } from './Companion';
-import { Fox } from './Fox';
-import { assetUrl, DEFAULT_OUTFIT, defaultCard, findOutfit, invalidOutfitCount } from './outfits';
+import { Companion, RestingBlanket } from './Companion';
+import { DEFAULT_OUTFIT, defaultCard, findOutfit, invalidOutfitCount } from './outfits';
 import { useWindowDrag } from './windowDrag';
 import { SleepTable } from './SleepTable';
 import { WardrobeDesigns, wardrobeCards } from './WardrobeDesigns';
 import {CaveWardrobe} from './CaveWardrobe';
+import {ClassicWardrobeArt} from './ClassicWardrobeArt';
+import {HumanWeatherWardrobe} from './HumanWeatherWardrobe';
+import humanLooks from '../desktop/human-weather.json';
+import caveLooks from '../desktop/cave-wardrobe.json';
+import type {HumanWeather,PetAppearance} from './types';
 import './home.css';
 
 const art = import.meta.glob<string>('./assets/home/*.png', { eager: true, query: '?url&no-inline', import: 'default' });
@@ -24,22 +28,24 @@ function FurnitureArt({ name }: { name: 'bed' | 'wardrobe' }) {
  </span>;
 }
 
-export function HomeRoom({ sleeping, action, outfitId, changing, error, onClearError, canShowcase, onSleep, onWear, onShowcase, onCamp, onCompact, caveAvailable,caveOutfit,onCaveWear,wardrobeGlint,onWardrobeOpen }: {
+export function HomeRoom({ sleeping, action, outfitId, changing, error, onClearError, canShowcase, onSleep, onWear, onShowcase, onCamp, onCompact, appearance,wardrobeUnlocked,caveOutfit,onCaveWear,wardrobeGlint,onWardrobeOpen,humanWeather,onHumanWear }: {
  sleeping: boolean; action: string; outfitId: string; changing: boolean; error: string; onClearError: () => void; canShowcase: boolean;
  onSleep: (value: boolean) => void; onWear: (id: string) => Promise<boolean>; onShowcase: () => void;
  onCamp: () => void; onCompact: () => void;
- caveAvailable:boolean;caveOutfit:string|null;onCaveWear:(id:string|null)=>Promise<void>;wardrobeGlint:boolean;
+ appearance:PetAppearance;wardrobeUnlocked:boolean;humanWeather:HumanWeather|null;onHumanWear:(id:HumanWeather|null)=>Promise<void>;caveOutfit:string|null;onCaveWear:(id:string|null)=>Promise<void>;wardrobeGlint:boolean;
  onWardrobeOpen: () => void;
 }) {
  const [sleepPanel, setSleepPanel] = useState<'music' | 'alarm' | null>(null);
  const [closet, setCloset] = useState<'closed' | 'opening' | 'open'>('closed');
  const [previewId, setPreviewId] = useState(outfitId);
- const [previewError, setPreviewError] = useState(false);
  const [feedback, setFeedback] = useState('');
  const wardrobeButton = useRef<HTMLButtonElement>(null);
  const closeButton = useRef<HTMLButtonElement>(null);
  const windowDrag = useWindowDrag('panel');
  const current = findOutfit(outfitId);
+ const currentName = appearance==='human'?(humanWeather?humanLooks[humanWeather]:'随天气切换'):
+  appearance==='fox'?(caveOutfit?caveLooks[caveOutfit as keyof typeof caveLooks]:'默认蓝白外观'):
+  (current?.name ?? defaultCard.name);
  const previewCard = wardrobeCards.find(card => card.id === previewId) ?? wardrobeCards[0];
  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
  const sleepingSprite = current?.actions.sleep;
@@ -56,7 +62,6 @@ export function HomeRoom({ sleeping, action, outfitId, changing, error, onClearE
   if (closet !== 'closed') return;
   setSleepPanel(null);
   setPreviewId(outfitId);
-  setPreviewError(false);
   setFeedback('');
   onClearError();
   onWardrobeOpen();
@@ -72,7 +77,6 @@ export function HomeRoom({ sleeping, action, outfitId, changing, error, onClearE
  async function wear(id: string) {
   if (!await onWear(id)) return;
   setPreviewId(id);
-  setPreviewError(false);
   setFeedback(id === DEFAULT_OUTFIT ? '已恢复默认装扮。' : `已穿上「${findOutfit(id)?.name}」。`);
  }
 
@@ -116,28 +120,24 @@ export function HomeRoom({ sleeping, action, outfitId, changing, error, onClearE
    </button>
   </div>
   <div className="home-state" role="status">
-   <span className="home-state-dot" aria-hidden="true"/><strong>{sleeping ? '休息中' : (current?.name ?? defaultCard.name)}</strong>
+   <span className="home-state-dot" aria-hidden="true"/><strong>{sleeping ? '休息中' : currentName}</strong>
    {sleeping && <small>轻点床铺就能叫醒</small>}
   </div>
   {closet === 'open' && <section className="home-closet" aria-labelledby="wardrobe-title">
    <header><h2 id="wardrobe-title">衣柜</h2><button ref={closeButton} type="button" onClick={closeCloset}>关闭预览</button></header>
    <FeatureGuide feature="wardrobe" openFirst={false}/>
-   {caveAvailable?<CaveWardrobe current={caveOutfit} onWear={onCaveWear}/>:<>
+   {appearance!=='classic'?(wardrobeUnlocked?
+    (appearance==='fox'?<CaveWardrobe current={caveOutfit} onWear={onCaveWear}/>:
+     <HumanWeatherWardrobe current={humanWeather} onWear={onHumanWear}/>):
+    <p className="wardrobe-status">发现山洞彩蛋后，会有更多服装。</p>):<>
    <WardrobeDesigns card={previewCard} currentId={outfitId} changing={changing}
-    onSelect={id => { setPreviewId(id); setPreviewError(false); setFeedback(''); onClearError(); }}
-    renderWearable={(card, active) => {
-     const costume = card.outfit;
-     if (!costume) return <Fox/>;
-     const animated = active && !reducedMotion && !previewError && assetUrl(costume, costume.preview);
-     return animated ? <CostumeArt key={card.id} outfit={costume} preview={animated} cleanPreview onError={() => setPreviewError(true)}/>
-      : <CostumeArt outfit={costume} cleanPreview/>;
-    }}/>
+    onSelect={id => { setPreviewId(id); setFeedback(''); onClearError(); }}
+    renderWearable={card=><ClassicWardrobeArt id={card.id} animate={canShowcase} showcase={card.id==='forest-guide'}/>}/>
    <footer>
     <div className="wardrobe-status" aria-live="polite">
      {error ? <small className="home-outfit-error" role="alert">{error}</small> :
       feedback ? <small>{feedback}</small> :
-      <small>{previewError ? '动图暂不可用，已显示待机图。' : previewCard.wearable ?
-       (previewCard.outfit && !previewCard.outfit.actions.sleep ? '休息时使用共用被窝。' : '') : '仅供查看，暂不可穿戴。'}</small>}
+      <small>{previewCard.outfit&&!previewCard.outfit.actions.sleep?'休息时使用共用被窝。':''}</small>}
      {invalidOutfitCount > 0 && <small>{invalidOutfitCount} 套装扮的登记资料不兼容。</small>}
     </div>
     <div className="home-closet-actions">

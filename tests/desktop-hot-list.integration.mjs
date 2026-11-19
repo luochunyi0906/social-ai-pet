@@ -71,7 +71,7 @@ async function launch(){
  await page.locator('.desktop-pet').waitFor();
 }
 async function openHot(){
- await page.locator('.pet-fox .fox-nose').dblclick();
+ await page.locator('.pet-fox .fox-costume-hit').dblclick();
  await button('好奇心山洞').click();
  await page.getByRole('region',{name:'山洞探索桌'}).waitFor();
  await button('今日热榜').click();

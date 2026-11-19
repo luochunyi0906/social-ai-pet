@@ -96,6 +96,7 @@
  border-color:#ded0b0;
 }
 .home-closet > header {border-bottom:1px solid #ded0b0}
+.home-closet > .feature-guide {flex:none;margin:6px 11px 0;max-height:22%;overflow:auto}
 .home-closet h2 {margin:0;font-size:21px;color:#3b4a31}
 .home-closet > footer {border-top:1px solid #ded0b0}
 .home-closet > footer small {color:#4c6440}
@@ -131,7 +132,7 @@
  display:grid;place-items:center;min-height:0;height:100%;max-width:100%;aspect-ratio:1;
  pointer-events:none;
 }
-.wardrobe-turntable-figure span,.wardrobe-turntable-figure img {
+.wardrobe-turntable-figure :is(img,.wardrobe-angle-atlas) {
  display:block;width:100%;height:100%;min-height:0;object-fit:contain;background-repeat:no-repeat;
 }
 .wardrobe-turntable-hint,.wardrobe-turntable-degrees {
@@ -147,6 +148,10 @@
  position:absolute;top:8px;right:8px;z-index:1;padding:3px 9px;font-size:12px;min-height:25px;
 }
 .wardrobe-shelf {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px}
+.wardrobe-shelf[data-single="true"] {grid-template-columns:minmax(0,1fr);}
+.wardrobe-gallery .wardrobe-turntable-figure {
+ width:100%;aspect-ratio:auto;grid-template:minmax(0,1fr)/minmax(0,1fr);padding:8px 14px 24px;
+}
 .home-scene .wardrobe-arrow {width:28px;min-height:33px;padding:0;font-size:23px;line-height:1}
 .wardrobe-rail {
  position:relative;display:flex;gap:7px;padding:2px 1px 5px;overflow-x:auto;
@@ -159,7 +164,7 @@
 .home-scene .home-outfit-card[aria-pressed="true"] {border-color:#78885e;background:#e5ead4;box-shadow:inset 0 0 0 1px #78885e}
 .home-outfit-card strong {font-size:11px;color:#423728}
 .home-outfit-card small {font-size:10px;color:#675638}
-.home-thumb {display:grid;place-items:center;width:100%;height:58px;border-radius:6px;background:#f3e6ca;overflow:hidden}
+.home-thumb {display:grid;place-items:center;width:100%;height:58px;border-radius:6px;background:#f3e6ca;overflow:hidden;grid-template:minmax(0,1fr)/minmax(0,1fr)}
 .home-thumb img {display:block;width:100%;height:100%;min-height:0;object-fit:contain;user-select:none}
 .home-thumb .fox {width:39px;height:52px}
 .home-preview,.home-preview-stage {height:100%}
@@ -171,10 +176,10 @@
 .wardrobe-status {line-height:1.25}
 .wardrobe-status small {display:block}
 .cave-wardrobe {
- flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);
+ flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);grid-template-rows:minmax(0,1fr);
  gap:12px;padding:12px 16px;overflow:auto;overscroll-behavior:contain;
 }
-.cave-wardrobe-preview {min-width:0;display:grid;grid-template-rows:auto minmax(168px,1fr) auto;gap:8px}
+.cave-wardrobe-preview {min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:8px}
 .cave-wardrobe-preview .wardrobe-heading {align-items:center}
 .cave-wardrobe-preview .wardrobe-heading h3 {margin:0}
 .cave-wardrobe-preview .wardrobe-turntable-figure {
@@ -304,3 +309,6 @@
 .home-alarm-actions input {min-width:0}
 .home-sleep-controls button.home-clear-alarm {display:block;margin-top:6px}
 @media (prefers-reduced-motion:reduce) {.home-device-art {transition:none}}
+
+.wardrobe-turntable-figure > .fox,
+.home-thumb > .fox {height:100%;width:100%;display:block;pointer-events:none;}

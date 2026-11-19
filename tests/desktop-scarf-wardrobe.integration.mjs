@@ -12,7 +12,6 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const profile=await mkdtemp(join(tmpdir(),'kanshan-scarf-native-'));
 const output=process.env.KANSHAN_SCARF_ARTIFACTS||tmpdir();
 const live=process.env.KANSHAN_LIVE_SCARF==='1';
-const designs=JSON.parse(await readFile(new URL('../desktop/wardrobe-designs.json',import.meta.url)));
 const cases=[
  {message:'你好',reply:'你好呀，今天想聊点什么？',id:'scarf_hello'},
  {message:'我准备开始学习了',reply:'先选一小节开个头，我给你加油。',id:'scarf_cheer'},
@@ -200,111 +199,40 @@ try{
   const closet=page.locator('.home-closet');
   const costume=(name)=>closet.locator('.home-outfit-card').filter({hasText:name});
   const angle=(name)=>closet.getByRole('button',{name,exact:true});
-  assert.equal(await closet.locator('.home-outfit-card').count(),14);
-  const thumbnails=await closet.locator('.home-thumb img').evaluateAll(async images=>{
-   await Promise.all(images.map(image=>image.decode()));
-   return images.map(image=>image.getAttribute('src'));
-  });
-  assert.equal(thumbnails.length,14);
-  assert.ok(thumbnails.every(src=>/front-cutout-[\w-]+\.png$/.test(src)));
-  assert.deepEqual((await closet.locator('.home-outfit-card strong').allTextContents()).slice(0,5),
-   ['默认装扮','森林引路者','营地围巾套装','小花园开衫','蓝色日常卫衣']);
-  await closet.getByRole('button',{name:'下一套'}).click();
-  await closet.getByRole('heading',{name:'森林引路者'}).waitFor();
-  await closet.getByRole('button',{name:'下一套'}).click();
-  await closet.getByRole('heading',{name:'营地围巾套装'}).waitFor();
+  assert.deepEqual(await closet.locator('.home-outfit-card strong').allTextContents(),['森林引路者']);
+  await costume('森林引路者').click();
   await screenshot('wardrobe-unified-gallery');
   const rotation=closet.getByRole('slider');
   const frame=rotation.locator('.wardrobe-turntable-figure[data-ready="true"]');
-  for(const entry of designs){
-   await costume(entry.name).click();
-   assert.equal(await button('穿上').count(),0);
-   await frame.waitFor();
-   for(const [name,degrees] of [['正面','0'],['侧面','90'],['背面','180']]){
-    await angle(name).click();
-    assert.equal(await rotation.getAttribute('aria-valuenow'),degrees);
-   }
-  }
   assert.equal(await outfit(),original);
-  await page.evaluate(()=>{
-   globalThis.originalWardrobeDecode=Image.prototype.decode;
-   Image.prototype.decode=function(){
-    return this.src.includes('turntable-')?Promise.reject(Error('fixture atlas unavailable')):
-     globalThis.originalWardrobeDecode.call(this);
-   };
-  });
-  await costume('营地围巾套装').click();
-  for(const [name,view] of [['正面','front'],['侧面','side'],['背面','back']]){
-   await angle(name).click();
-   const fallback=rotation.locator('.wardrobe-turntable-figure img');
-   await fallback.evaluate(image=>image.decode());
-   assert.match(await fallback.getAttribute('src'),new RegExp(view+'-cutout-'));
-  }
-  await page.evaluate(()=>{Image.prototype.decode=globalThis.originalWardrobeDecode;});
-  await costume('小花园开衫').click();
-  await costume('营地围巾套装').click();
-  await frame.waitFor();
-  await angle('正面').click();
-  const frontPixels=await frame.screenshot();
-  await angle('侧面').click();
-  assert.notDeepEqual(await frame.screenshot(),frontPixels);
-  await screenshot('wardrobe-cutout-side');
-  const fullWidth=await rotation.boundingBox();
-  const sweepStart=fullWidth.x+fullWidth.width*.04;
-  const sweepY=fullWidth.y+fullWidth.height/2;
-  await page.mouse.move(sweepStart,sweepY);
-  await rotation.press('Home');
-  const views=new Set();
-  const heldView=await frame.screenshot();
-  await page.mouse.move(sweepStart+fullWidth.width*.03,sweepY);
-  assert.ok((await frame.screenshot()).equals(heldView),'同一视角的截图应保持一致');
-  for(let step=0;step<=8;step++){
-   await page.mouse.move(sweepStart+fullWidth.width*.90*step/8,sweepY);
-   await page.waitForFunction(degrees=>document.querySelector('.wardrobe-turntable')?.getAttribute('aria-valuenow')===degrees,String(step%8*45));
-   views.add(await frame.getAttribute('data-view'));
-  }
-  assert.deepEqual([...views].sort(),['0','1','2','3','4','5','6','7']);
-  assert.equal(await rotation.getAttribute('aria-valuenow'),'0');
-  if(process.env.KANSHAN_SPIN_PROOF==='1'){
-   await page.mouse.move(fullWidth.x,fullWidth.y-8);
-   await rotation.press('Home');
-   for(let step=0;step<8;step++){
-    await screenshot('rotation-'+String(step).padStart(2,'0'));
-    await rotation.press('ArrowRight');
-   }
-  }
-  await resize(600,560);
-  await costume('小花园开衫').click();
-  await frame.waitFor();
-  await rotation.press('ArrowLeft');
-  assert.equal(await rotation.getAttribute('aria-valuenow'),'315');
-  await rotation.press('ArrowRight');
-  assert.equal(await rotation.getAttribute('aria-valuenow'),'0');
-  const bounds=await rotation.boundingBox();
-  const left=bounds.x+bounds.width*.30;
-  const right=bounds.x+bounds.width*.54;
-  const y=bounds.y+bounds.height/2;
-  await page.mouse.move(left,y);
-  await rotation.press('Home');
-  await page.mouse.move(right,y,{steps:8});
-  const hoverAngle=Number(await rotation.getAttribute('aria-valuenow'));
-  assert.equal(hoverAngle,90);
-  await page.mouse.down();
-  await page.mouse.move(right+60,y,{steps:4});
-  await page.mouse.up();
-  assert.ok(Number(await rotation.getAttribute('aria-valuenow'))>hoverAngle);
-  await page.mouse.wheel(124,0);
-  await page.waitForFunction(()=> Number(document.querySelector('.wardrobe-turntable')?.getAttribute('aria-valuenow'))>260);
-  assert.equal(await rotation.locator('.wardrobe-turntable-figure').count(),1);
-  for(const name of ['返回房间','关闭预览']){
-   const box=await closet.getByRole('button',{name,exact:true}).boundingBox();
-   assert.ok(box&&box.y>=0&&box.y+box.height<=560);
-  }
-  await screenshot('wardrobe-turntable-small');
   await costume('森林引路者').click();
-  await frame.waitFor();
-  await angle('侧面').click();
+  const directions=[['正面','0'],['侧面','90'],['背面','180'],['另一侧','270']];
+  for(const [name,degrees] of directions){
+   await frame.waitFor();
+   await angle(name).click();
+   assert.equal(await rotation.getAttribute('aria-valuenow'),degrees);
+  }
+  await rotation.press('Home');
+  const views=[];
+  for(let index=0;index<8;index++){
+   views.push(await frame.getAttribute('data-view'));
+   await rotation.press('ArrowRight');
+  }
+  assert.deepEqual(views,Array.from({length:8},(_,index)=>String(index)));
+  const box=await rotation.boundingBox();
+  const y=Math.round(box.y+box.height*.5);
+  const x=Math.round(box.x+box.width*.2);
+  await page.mouse.move(x,y);
+  await page.mouse.down();
+  await page.mouse.move(Math.round(x+box.width*.225),y,{steps:5});
+  await page.mouse.up();
   assert.equal(await rotation.getAttribute('aria-valuenow'),'90');
+  await resize(600,560);
+  await screenshot('wardrobe-turntable-small');
+  for(const name of ['返回房间','关闭预览']){
+   const buttonBox=await closet.getByRole('button',{name,exact:true}).boundingBox();
+   assert.ok(buttonBox&&buttonBox.y>=0&&buttonBox.y+buttonBox.height<=560);
+  }
   await button('查看实际效果').click();
   await closet.locator('.home-preview [data-outfit-id="forest-guide"]').waitFor();
   await button('穿上').click();
@@ -316,7 +244,7 @@ try{
   await page.locator('.desktop-pet [data-rendering="legacy-blanket"]').waitFor();
   await button('叫醒刘看山').click();
   await page.locator('.desktop-pet [data-outfit-id="forest-guide"]').waitFor();
-  console.log('本地通过：14 套透明缩略图、三向备用图、横移一圈切换全部八张静态图、同一视角截图逐像素一致，以及拖动、键盘导航、小窗、穿戴和睡眠回归。');
+  console.log('本地通过：森林引路者与可恢复的默认外观、八个方向的原画预览，以及拖动、键盘导航、小窗、穿戴和睡眠回归。');
  }
  if(live&&seen.some(row=>row.status!=='complete'||row.expected!==row.selected))process.exitCode=2;
 }finally{

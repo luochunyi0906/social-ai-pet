@@ -10,15 +10,18 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const profile = await mkdtemp(join(tmpdir(), 'kanshan-fox-motion-'));
 const executablePath = resolve(root, process.env.KANSHAN_PACKAGE_DIR || 'release',
  '看山有伴.app/Contents/MacOS/Kanshan');
+const outfit = process.env.KANSHAN_FOX_OUTFIT;
 let app;
 
 try {
  await writeFile(join(profile, 'window-preferences.json'), JSON.stringify({
-  version: 1, appearance: 'fox', snow: false, wander: { enabled: false, interval: 90, distance: 75, dwell: 4 },
+  version: 1, appearance: 'fox', snow: false,
+  ...(outfit ? { caveStickerReward:true, caveOutfit:outfit } : {}), wander: { enabled: false, interval: 90, distance: 75, dwell: 4 },
  }));
  app = await electron.launch({ executablePath, env: { ...process.env, KANSHAN_DATA_DIR: profile } });
  const desktop = await app.firstWindow();
  await skipGuide(desktop);
+ if(outfit)await desktop.locator(`.desktop-pet [data-cave-outfit="${outfit}"]`).waitFor();
  await desktop.locator('.desktop-pet [data-pet-appearance="fox"]').waitFor();
 
  await app.evaluate(({ BrowserWindow, screen }) => {
@@ -53,11 +56,13 @@ try {
    const strip = document.querySelector('.fox-motion-strip');
    return strip && getComputedStyle(strip).transform !== previous;
   }, from);
-  assert.match(await sprite.locator('image').first().getAttribute('href'), new RegExp(movement + '-left-'));
+  assert.match(await sprite.locator('image').first().getAttribute('href'), new RegExp((outfit ? outfit + '-' : '') + movement + '-left-'));
+  assert.equal(await sprite.locator('image').first().getAttribute('width'), String(240 * (movement === 'run' ? 8 : 14)));
   if (process.env.KANSHAN_FOX_PROOF) {
    await child.screenshot({ path: join(process.env.KANSHAN_FOX_PROOF, movement + '.png'), omitBackground: true });
   }
   await desktop.locator('.desktop-pet .pet-fox:not(.is-away)').waitFor();
+  if(outfit)await desktop.locator(`.desktop-pet [data-cave-outfit="${outfit}"] image:is([href*="${outfit}-front-"],[href*="${outfit}-headset-"])`).first().waitFor();
  }
  console.log('通过：狐狸 Q 版近距离走回、远距离跑回，各自播放不同节奏的实际步态帧。');
 } finally {

@@ -39,19 +39,14 @@ try{
  const movement=await page.evaluate(()=>window.kanshan.movementSettings());
  assert.equal(movement.data.scope,'desktop');
  const initial=await bounds();
- const walking=child.locator('[data-animation="act_walk"][data-animation-format="gif"]');
- await walking.waitFor();
- assert.match(await walking.locator('image').getAttribute('href'),/act_walk-[\w-]+\.gif$/);
- await walking.locator('image').evaluate(async element=>{
-  const image=new Image();
-  image.src=element.getAttribute('href');
-  await image.decode();
-  if(image.naturalWidth!==256||image.naturalHeight!==256)throw Error('走路 GIF 画布尺寸不符');
- });
- const firstFrame=await walking.screenshot({timeout:2500});
- await child.waitForTimeout(110);
- const secondFrame=await walking.screenshot({timeout:2500});
- assert.notDeepEqual(firstFrame,secondFrame);
+ const walking=child.locator('[data-animation="act_walk"]');
+ const leg=walking.locator('[data-rig-pose="walk"] .classic-connected').first();
+ await leg.waitFor();
+ const firstPhase=await leg.evaluate(node=>node.innerHTML);
+ await child.waitForFunction(before=>{
+  const current=document.querySelector('[data-rig-pose="walk"] .classic-connected');
+  return current&&current.innerHTML!==before;
+ },firstPhase);
  const moving=await bounds();
  assert.notDeepEqual(initial,moving);
  assert.ok(moving.x>=work.x&&moving.y>=work.y&&moving.x+moving.width<=work.x+work.width&&moving.y+moving.height<=work.y+work.height);

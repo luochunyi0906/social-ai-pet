@@ -47,7 +47,7 @@
 | `desktop/scarf-stickers.json`、`desktop/chat-stickers.cjs` | 表情资源、白名单、语义和播放元数据 |
 | `desktop/chat-model.cjs`、`desktop/chat-session.cjs`、`desktop/companion-chat.cjs`、`desktop/main.cjs` | 模型选图协议、消息存档、主动开场、播种保存后的反馈 |
 | `src/ChatPanel.tsx`、`src/ChatSticker.tsx`、`src/chat-stickers.css`、`src/GardenPanel.tsx` | 贴纸展示、单次播放、历史回看与场景反馈 |
-| `src/HomeRoom.tsx`、`src/WardrobeDesigns.tsx`、`src/home.css`、`desktop/wardrobe-designs.json` | 衣柜页签、套装卡和三视图 |
+| `src/HomeRoom.tsx`、`src/WardrobeDesigns.tsx`、`src/home.css`、`desktop/outfits/forest-guide.json` | 衣柜页签、套装卡和三视图 |
 | `src/main.tsx`、`src/types.ts` | 场景状态与消息字段 |
 | `src/assets/chat-stickers/scarf/`、`src/assets/wardrobe-designs/` | 两组新素材 |
 | `tests/chat-stickers.test.mjs`、`tests/desktop-scarf-wardrobe.integration.mjs`、`tests/desktop-stickers.integration.mjs`、`tests/desktop-camp-art.integration.mjs` | 自动化和原生验收 |

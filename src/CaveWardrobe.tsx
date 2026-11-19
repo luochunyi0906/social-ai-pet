@@ -2,13 +2,14 @@ import { useState } from 'react';
 import outfits from '../desktop/cave-wardrobe.json';
 import { AppearanceArt } from './PetAppearance';
 import { WardrobeTurntable } from './WardrobeTurntable';
+import {foxWardrobeArt} from './FoxWardrobeArt';
 
 type OutfitId = keyof typeof outfits;
 const catalog = Object.keys(outfits) as OutfitId[];
-const art = import.meta.glob<string>('./assets/cave/turntable/*/{front,side,back}.webp',
+const art = import.meta.glob<string>('./assets/cave/turntable/default/{front,side,back}.webp',
  { eager: true, query: '?url&no-inline', import: 'default' });
 const picture = (id: OutfitId | null, angle: 'front' | 'side' | 'back') =>
- art[`./assets/cave/turntable/${id ?? 'default'}/${angle}.webp`];
+ id?foxWardrobeArt(id,`angle-${angle}`):art[`./assets/cave/turntable/default/${angle}.webp`];
 const outfitId = (value: string | null): OutfitId | null =>
  value && Object.hasOwn(outfits, value) ? value as OutfitId : null;
 
@@ -17,11 +18,13 @@ export function CaveWardrobe({ current, onWear }: {
 }) {
  const [preview, select] = useState(() => outfitId(current));
  const [saving, setSaving] = useState(false);
+ const [actual, setActual] = useState(false);
  const [problem, setProblem] = useState('');
  const name = preview ? outfits[preview] : '默认蓝白外观';
  const front = picture(preview, 'front');
  const side = picture(preview, 'side');
  const back = picture(preview, 'back');
+ const turntable = preview ? foxWardrobeArt(preview,'turntable') : undefined;
 
  async function wear(id: OutfitId | null) {
   setSaving(true);
@@ -45,11 +48,12 @@ export function CaveWardrobe({ current, onWear }: {
     </span>
    </div>
    <div className="wardrobe-display">
-    {front && side && back
-     ? <WardrobeTurntable key={preview ?? 'default'} name={name} front={front} side={side} back={back} dragOnly/>
+    {!actual && front && side && back
+     ? <WardrobeTurntable key={preview ?? 'default'} name={name} sprite={turntable} front={front} side={side} back={back} dragOnly/>
      : <div className="home-preview-stage"><AppearanceArt appearance="fox" caveOutfit={preview}/></div>}
    </div>
    <div className="cave-wardrobe-actions">
+    {front&&side&&back&&<button type="button" onClick={()=>setActual(!actual)}>{actual?'返回 360° 预览':'查看实际效果'}</button>}
     {problem && <small role="alert">{problem}</small>}
     <div className="home-closet-actions">
      <button type="button" disabled={saving || (preview === null && current === null)}
@@ -61,7 +65,7 @@ export function CaveWardrobe({ current, onWear }: {
   </div>
   <div className="cave-wardrobe-grid" aria-label="狐狸版服装">
    {catalog.map(id => <button type="button" key={id} disabled={saving}
-    aria-pressed={preview === id} onClick={() => { select(id); setProblem(''); }}>
+    aria-pressed={preview === id} onClick={() => { select(id); setActual(false); setProblem(''); }}>
     <span className="cave-wardrobe-thumb" aria-hidden="true">
      {picture(id, 'front') ? <img src={picture(id, 'front')} alt="" draggable={false}/>
       : <AppearanceArt appearance="fox" caveOutfit={id}/>}

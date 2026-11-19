@@ -15,8 +15,8 @@ function windowPlan(target,display,size,side,form){
  const {workArea:area,bounds}=display;
  const near=(a,b)=>Math.abs(a-b)<=12;
  if(near(target.width,bounds.width)&&near(target.height,bounds.height))return;
- const portrait=form==='fox';
- const grip=portrait?20:14;
+ const portrait=form==='fox'||form==='human';
+ const grip=form==='human'?17:portrait?20:14;
  const x=[target.x-size.width+grip,target.x+target.width-grip];
  const eligible=x.map(left=>left>=area.x+5&&left+size.width<=area.x+area.width-5);
  const top=target.y-size.height+14;

@@ -1,6 +1,7 @@
 import { FeatureGuide } from './FeatureGuide';
 import { useEffect, useRef, useState } from 'react';
 import { unwrap } from './types';
+import {MusicButtons} from './MusicButtons';
 
 function localTime(timestamp: number) {
  const date = new Date(timestamp);
@@ -125,11 +126,7 @@ export function SleepTable({ panel, onPanel }: {
    <FeatureGuide key={panel} feature={panel}/>
    {panel === 'music' ? <>
     <p>用这台 Mac 的 QQ 音乐听歌。</p>
-    <div className="home-alarm-actions">
-     <button className="primary" disabled={busy} type="button" onClick={() => music('sample')}>播放林间夜曲</button>
-     <button disabled={busy} type="button" onClick={() => music('file')}>选本地歌曲</button>
-     <button disabled={busy} type="button" onClick={() => music('open')}>打开 QQ 音乐</button>
-    </div>
+    <MusicButtons busy={busy} onAction={music}/>
     {musicStatus && <p role="status">{musicStatus}</p>}
    </> : <form onSubmit={event => { event.preventDefault(); createAlarm(); }}>
     <label htmlFor="home-alarm-time">响铃时间</label>
