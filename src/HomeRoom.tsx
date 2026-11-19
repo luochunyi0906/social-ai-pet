@@ -1,3 +1,4 @@
+import { FeatureGuide } from './FeatureGuide';
 import { useEffect, useRef, useState } from 'react';
 import { Companion, CostumeArt, RestingBlanket } from './Companion';
 import { Fox } from './Fox';
@@ -97,6 +98,7 @@ export function HomeRoom({ sleeping, action, outfitId, changing, error, onClearE
    </div>
    <div className="home-bar-actions"><button type="button" onClick={onCamp}>返回营地</button><button type="button" onClick={onCompact}>收回桌面</button></div>
   </header>
+  {closet==="closed"&&!sleepPanel&&<FeatureGuide feature="home" floating/>}
   <div className="home-furniture">
    <button className="home-furniture-button home-bed" type="button" title={sleeping ? '起床' : '休息／睡眠'}
     aria-label={sleeping ? '起床' : '休息／睡眠'} onClick={() => onSleep(!sleeping)}>
@@ -119,6 +121,7 @@ export function HomeRoom({ sleeping, action, outfitId, changing, error, onClearE
   </div>
   {closet === 'open' && <section className="home-closet" aria-labelledby="wardrobe-title">
    <header><h2 id="wardrobe-title">衣柜</h2><button ref={closeButton} type="button" onClick={closeCloset}>关闭预览</button></header>
+   <FeatureGuide feature="wardrobe" openFirst={false}/>
    {caveAvailable?<CaveWardrobe current={caveOutfit} onWear={onCaveWear}/>:<>
    <WardrobeDesigns card={previewCard} currentId={outfitId} changing={changing}
     onSelect={id => { setPreviewId(id); setPreviewError(false); setFeedback(''); onClearError(); }}

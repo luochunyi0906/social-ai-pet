@@ -22,7 +22,11 @@ export function usePetClicks(open:()=>void,activity?:(kind:string)=>void){
  function pick(detail:number){
   const now=performance.now();
   if(now<mutedUntil.current)return;
-  if(detail===0){clear();latest.current.open();return;}
+  if(detail===0){
+   display('look',1000);
+   latest.current.activity?.('look');
+   return;
+  }
   clicks.current=clicks.current.filter(time=>now-time<=1500);
   clicks.current.push(now);
   if(clicks.current.length>=3){
@@ -34,7 +38,7 @@ export function usePetClicks(open:()=>void,activity?:(kind:string)=>void){
   }
   display('look',1000);
   latest.current.activity?.('look');
-  if(!timers.current.open)timers.current.open=setTimeout(()=>{
+  if(clicks.current.length===2)timers.current.open=setTimeout(()=>{
    clear();timers.current.open=undefined;
    latest.current.open();
   },1500);

@@ -9,11 +9,22 @@ export type Favorite={id:string;key:string;title:string;kind:'generated_question
 export type PlantVariety=keyof typeof plantVarieties;
 export type PlantRecord={id:string;favoriteId:string;slot:number;variety:PlantVariety;stage:'planted'|'sprout'|'growing'|'flower';water:number;nutrients:number;growth:number;plantedAt:string;updatedAt:string;wateredAt:string|null;fertilizedAt:string|null;legacy:boolean};
 export type Garden={version:3;favorites:Favorite[];plants:PlantRecord[];revision:number;operations:{id:string;signature:string}[]};
-export type GardenAction={id:string;action:'plant'|'water'|'fertilize';favoriteId?:string;plantId?:string;slot?:number};
+export type GardenAction={id:string;action:'plant'|'water'|'fertilize'|'harvest';favoriteId?:string;plantId?:string;slot?:number};
 export type Result<T>={ok:true;data:T}|{ok:false;error:string};
 export type ModelStatus={provider?:'openai-compatible'|'zhida';modelReady:boolean;destination:string;platform:string;model:string;configId:string;issues:string[];hasKey:boolean;timeoutMs:number};
 export type ConnectionCheck={questionCount:number;destination:string;model:string;checkedAt:string};
 export type Post=SourceMetadata&{id:string;title:string;url:string;kind:'question'|'answer'|'article';relevance?:'api_ranked'|'title_match'|'partial_title_match'|'no_title_match';titleMatches?:number;titleTerms?:number};
+export type ModelSettingKey = 'MODEL_PROVIDER'|'CHAT_PROVIDER'|'ZHIDA_MODEL'|'SEARCH_PROVIDER'|
+  'MODEL_BASE_URL'|'MODEL_NAME'|'CHAT_BASE_URL'|'CHAT_MODEL';
+export type ModelCredentialKey = 'MODEL_API_KEY'|'ZHIHU_ACCESS_SECRET'|'SEARCH_API_KEY';
+export type ModelSettingsPatch = Partial<Record<ModelSettingKey | ModelCredentialKey, string>>;
+export type ModelSettingsView = {
+  values: Record<ModelSettingKey, string>;
+  hasCredential: Record<ModelCredentialKey, boolean>;
+};
+export type ModelSettingsResult = {
+  settings: ModelSettingsView; model: ModelStatus; chat: ChatStatus; search: SearchStatus;
+};
 export type SearchStatus={provider:string;ready:boolean;issues:string[];destination:string;configId:string;experimental:boolean};
 export type SearchDiagnostics={attempts:{locale:string;http:number;rawCount:number;validCount:number;matchedCount:number}[];rawCount:number;validCount:number;matchedCount:number;partialCount:number;rejectedCount:number;terms:string[];reason:string};
 export type SearchResponse={results:Post[];partialResults:Post[];query:string;provider:string;diagnostics:SearchDiagnostics;emptyReason?:string;searchHashId?:string};
@@ -105,6 +116,8 @@ export type Bridge={
  claimCaveSticker:(ticket:string)=>Promise<Result<boolean>>;
  caveStickerStatus:()=>Promise<Result<boolean>>;
  onChatProgress:(fn:(p:{id:string;messageId:string;text:string})=>void)=>()=>void;
+ modelSettings:()=>Promise<Result<ModelSettingsView>>;
+ saveModelSettings:(patch:ModelSettingsPatch)=>Promise<Result<ModelSettingsResult>>;
  chatStatus:()=>Promise<Result<ChatStatus>>;
  chatState:()=>Promise<Result<ChatState>>;
  changeChat:(mode:'select'|'new'|'clear',id?:string)=>Promise<Result<ChatState>>;
@@ -121,7 +134,7 @@ export type Bridge={
  saveAppearance:(appearance:PetAppearance)=>Promise<Result<PetAppearance>>;
  setSnow:(enabled:boolean)=>Promise<Result<{snow:boolean}>>;
  onWindowVisibility:(fn:(visible:boolean)=>void)=>()=>void;
- zhihuQuota:(p:{id:string;consent:boolean;configId:string})=>Promise<Result<ZhihuQuota>>;gardenAction:(p:GardenAction)=>Promise<Result<Garden>>;openSearchConfig:()=>Promise<Result<boolean>>;searchStatus:()=>Promise<Result<SearchStatus>>;searchPosts:(p:{id:string;query:string;consent:boolean;configId:string})=>Promise<Result<SearchResponse>>;openPost:(url:string)=>Promise<Result<boolean>>;surface:(mode:'pet'|'panel')=>Promise<Result<boolean>>;hitTest:(p:{id:number;active:boolean})=>Promise<Result<boolean>>;capture:(active:boolean)=>Promise<Result<boolean>>;menu:()=>Promise<Result<boolean>>;onProbe:(fn:(p:{id:number;x:number;y:number})=>void)=>()=>void;onAction:(fn:(name:string)=>void)=>()=>void;status:()=>Promise<Result<ModelStatus>>;refreshConfig:()=>Promise<Result<ModelStatus>>;checkModel:(p:{id:string;consent:boolean;configId:string})=>Promise<Result<ConnectionCheck>>;dropFile:(file:File)=>Promise<Result<{token:string;name:string}>>;forgetFile:()=>Promise<Result<boolean>>;chooseFile:()=>Promise<Result<{token:string;name:string}|null>>;process:(p:{id:string;consent:boolean;mode:'sample'|'model';text?:string;fileToken?:string;configId?:string})=>Promise<Result<{questions:Question[];simulated:boolean}>>;cancel:(id:string)=>Promise<Result<boolean>>;load:()=>Promise<Result<Garden>>;save:(p:{kind:Favorite['kind'];title:string;keywords:string;simulated:boolean;resultId?:string})=>Promise<Result<Garden&{favoriteCreated:boolean}>>;update:(p:{id:string;action:'hide'|'delete'})=>Promise<Result<Garden>>;open:(words:string)=>Promise<Result<boolean>>;control:(command:string)=>Promise<Result<boolean>>;onSuspend:(fn:()=>void)=>()=>void};
+ zhihuQuota:(p:{id:string;consent:boolean;configId:string})=>Promise<Result<ZhihuQuota>>;gardenAction:(p:GardenAction)=>Promise<Result<Garden>>;openSearchConfig:()=>Promise<Result<boolean>>;searchStatus:()=>Promise<Result<SearchStatus>>;searchPosts:(p:{id:string;query:string;consent:boolean;configId:string})=>Promise<Result<SearchResponse>>;openPost:(url:string)=>Promise<Result<boolean>>;surface:(mode:'pet'|'panel')=>Promise<Result<boolean>>;guideSeen:()=>Promise<Result<boolean>>;hitTest:(p:{id:number;active:boolean})=>Promise<Result<boolean>>;capture:(active:boolean)=>Promise<Result<boolean>>;menu:()=>Promise<Result<boolean>>;onProbe:(fn:(p:{id:number;x:number;y:number})=>void)=>()=>void;onAction:(fn:(name:string)=>void)=>()=>void;status:()=>Promise<Result<ModelStatus>>;refreshConfig:()=>Promise<Result<ModelStatus>>;checkModel:(p:{id:string;consent:boolean;configId:string})=>Promise<Result<ConnectionCheck>>;dropFile:(file:File)=>Promise<Result<{token:string;name:string}>>;forgetFile:()=>Promise<Result<boolean>>;chooseFile:()=>Promise<Result<{token:string;name:string}|null>>;process:(p:{id:string;consent:boolean;mode:'sample'|'model';text?:string;fileToken?:string;configId?:string})=>Promise<Result<{questions:Question[];simulated:boolean}>>;cancel:(id:string)=>Promise<Result<boolean>>;load:()=>Promise<Result<Garden>>;save:(p:{kind:Favorite['kind'];title:string;keywords:string;simulated:boolean;resultId?:string})=>Promise<Result<Garden&{favoriteCreated:boolean}>>;update:(p:{id:string;action:'hide'|'delete'})=>Promise<Result<Garden>>;open:(words:string)=>Promise<Result<boolean>>;control:(command:string)=>Promise<Result<boolean>>;onSuspend:(fn:()=>void)=>()=>void};
 declare global{interface Window{kanshan?:Bridge}}
 export type RecommendationMode='account'|'topic';
 export type RecommendationBatch={mode:RecommendationMode;query?:string;count:number;retrievedAt:string;items:Post[]};

@@ -1,3 +1,5 @@
+import {Companion} from './Companion';
+import {usePetClicks} from './usePetClicks';
 import {useEffect,useRef,useState} from 'react';
 import film from './assets/cave/reveal.mp4?url&no-inline';
 import './cave-reveal.css';
@@ -35,4 +37,18 @@ export function CaveReveal({onClose,onPersonRevealed}:{onClose:()=>void;onPerson
   <button type="button" autoFocus className="cave-reveal-close" onClick={onClose}>离开</button>
   {failed&&<p role="alert">暂时无法播放山洞彩蛋。</p>}
  </dialog>;
+}
+
+export function CaveCompanion({ action, onActivity, onChat }: {
+ action: string;
+ onActivity: (kind: string) => void;
+ onChat: () => void;
+}) {
+ const clicks = usePetClicks(onChat, onActivity);
+ return <button type="button" className="cave-companion" aria-label="和山洞里的刘看山互动"
+  title="单击互动，双击打开聊天"
+  onClick={event=>{if(!event.ctrlKey)clicks.pick(event.detail);}}>
+  <span className="cave-companion-art"><Companion action={action} gesture={clicks.gesture}/></span>
+  <span><strong>刘看山</strong><small>单击互动 · 双击聊天</small></span>
+ </button>;
 }

@@ -1,3 +1,4 @@
+import { FeatureGuide } from './FeatureGuide';
 import {catalog,stickerIds,caveStickerIds,StickerArt} from './ChatSticker';
 import './chat-stickers.css';
 import {useActorEvents} from './ActorAnimation';
@@ -212,6 +213,7 @@ export function ChatPanel({source,onClose,onSpeech,onActivity,actorAction,window
   <button className="modal-close" aria-label="关闭对话" onClick={onClose}>×</button>
   {!teachingOpen&&<p className="eyebrow">A MOMENT TOGETHER</p>}
   <h2 id="chat-title">{teachingOpen?'今天你来当老师':'说一点你正想着的事'}</h2>
+  <FeatureGuide key={teachingOpen ? "teaching" : "chat"} feature={teachingOpen ? "teaching" : "chat"} openFirst={teachingOpen}/>
   <div className="chat-top">
    <div className="modal-companion"><Companion action={actorAction}/><p>{teachingOpen?'我先听你讲。':pending&&!progress?'先想清楚，再回答。':'我在，慢慢说。'}</p></div>
    <div className="chat-session-controls">
