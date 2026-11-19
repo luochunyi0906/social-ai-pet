@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
@@ -62,9 +63,10 @@ try{
  let page;
  const open=async()=>{
   page=await app.firstWindow();
+  await skipGuide(page);
   await page.emulateMedia({reducedMotion:'no-preference'});
-  await page.locator('.pet-fox .fox-nose').click();
-  await page.getByRole('button',{name:'和刘看山聊聊',exact:true}).click();
+  await page.locator('.pet-fox .fox-nose').dblclick();
+  await page.getByRole('button',{name:'和刘看山互动，可双击打开聊天',exact:true}).dblclick();
   await page.getByRole('heading',{name:'说一点你正想着的事'}).waitFor();
  };
  const btn=name=>page.getByRole('button',{name,exact:true});

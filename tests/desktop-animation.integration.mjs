@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
@@ -25,6 +26,7 @@ try{
   env:{...process.env,KANSHAN_DATA_DIR:profile},timeout:16000,
  });
  const page=await app.firstWindow();
+ await skipGuide(page);
  page.setDefaultTimeout(real?39000:6500);
  await page.emulateMedia({reducedMotion:'no-preference'});
  const button=(name,scope=page)=>scope.getByRole('button',{name,exact:true});
@@ -71,7 +73,7 @@ try{
   await button('发送').click();
   if(check)await waitSprite('emo_thinking','loop','.chat-modal');
  };
- const openChat=()=>button('和刘看山聊聊').click();
+ const openChat=()=>button('和刘看山互动，可双击打开聊天').dblclick();
  const openSearch=async()=>{
   await page.locator('.camp-cave').click();
   await waitSprite('emo_curious','enter');
@@ -100,7 +102,7 @@ try{
   mark('桌面营地的角色待机固定显示第一帧');
   await capture('01-desktop-idle');
  }
- await page.locator('.pet-fox .fox-animation-hit').click();
+ await page.locator('.pet-fox .fox-animation-hit').dblclick();
  await page.locator('.camp-shell').waitFor();
  if(!real){
   await page.waitForFunction(()=>Number(document.querySelector('.camp-fox [data-animation="act_idle"]')?.getAttribute('data-animation-frame'))>1);

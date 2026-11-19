@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -17,6 +18,7 @@ try {
  }));
  app = await electron.launch({ executablePath, env: { ...process.env, KANSHAN_DATA_DIR: profile } });
  const desktop = await app.firstWindow();
+ await skipGuide(desktop);
  await desktop.locator('.desktop-pet [data-pet-appearance="fox"]').waitFor();
 
  await app.evaluate(({ BrowserWindow, screen }) => {

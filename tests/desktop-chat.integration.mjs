@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
@@ -107,6 +108,7 @@ async function launch(){
   };
  },{real,zhida,gap,lastSent:report.http.findLast(trace=>trace.sentAt)?.sentAt||0});
  page=await app.firstWindow();
+ await skipGuide(page);
  page.setDefaultTimeout(20000);
  await page.locator('.desktop-pet').waitFor();
  if(zhida){
@@ -135,8 +137,8 @@ const disk=async()=>JSON.parse(await readFile(join(profile,'chat-v1.json'),'utf8
 const current=async()=>{const db=await disk();return db.sessions.find(session=>session.id===db.activeId);};
 
 async function openChat(){
- if(await page.locator('.desktop-pet').isVisible())await page.locator('.pet-fox .fox-nose').click();
- if(!await dialog().isVisible())await button('和刘看山聊聊').click();
+ if(await page.locator('.desktop-pet').isVisible())await page.locator('.pet-fox .fox-nose').dblclick();
+ if(!await dialog().isVisible())await button('和刘看山互动，可双击打开聊天').dblclick();
  await dialog().waitFor();
  await dialog().getByText('聊天服务',{exact:false}).waitFor();
 }

@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -25,9 +26,10 @@ try{
  const alreadyRunning=await ready();
  app=await electron.launch({executablePath,env:{...env,KANSHAN_DATA_DIR:profile},timeout:25000});
  const page=await app.firstWindow();
- await page.locator('.pet-fox .fox-nose').click();
+ await skipGuide(page);
+ await page.locator('.pet-fox .fox-nose').dblclick();
  const dialog=page.getByRole('dialog',{name:'说一点你正想着的事'});
- if(!await dialog.isVisible())await page.getByRole('button',{name:'和刘看山聊聊',exact:true}).click();
+ if(!await dialog.isVisible())await page.getByRole('button',{name:'和刘看山互动，可双击打开聊天',exact:true}).dblclick();
  await dialog.getByText('聊天服务 qwen3.5:9b', {exact:false}).waitFor();
  assert.equal(await dialog.getByRole('checkbox').count(),0);
  assert.equal(await ready(),alreadyRunning,'首次发送前不应额外启动模型');

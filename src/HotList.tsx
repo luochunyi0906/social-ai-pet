@@ -1,3 +1,4 @@
+import { FeatureGuide } from './FeatureGuide';
 import {useActorEvents} from './ActorAnimation';
 import {useEffect,useRef,useState} from 'react';
 import {Companion} from './Companion';
@@ -168,6 +169,7 @@ export function HotList({favorites,action,daily,onBack,onCompact,onChat,onSave,o
     {recommendations?(sampleRecommendations&&<span className="hot-badge hot-demo-badge">示例数据 · 非实时推荐</span>):
      <span className={'hot-badge '+(demo?'hot-demo-badge':'')}>{demo?'示例数据 · 非实时热榜':loading?'正在获取':date?(fresh&&!issue?'已获取':'缓存内容'):issue?'获取失败':'等待获取'}</span>}
    </header>
+   <FeatureGuide feature="hot"/>
    {!recommendations&&!demo&&issue&&<div className="hot-problem" role="alert">
     <span>{date?'本次刷新失败，保留上次内容。 ':''}{issue}</span>
     {state?.problem?.code==='auth'&&<button onClick={onSettings}>连接配置</button>}

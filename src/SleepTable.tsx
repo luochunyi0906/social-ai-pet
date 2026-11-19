@@ -1,3 +1,4 @@
+import { FeatureGuide } from './FeatureGuide';
 import { useEffect, useRef, useState } from 'react';
 import { unwrap } from './types';
 
@@ -121,6 +122,7 @@ export function SleepTable({ panel, onPanel }: {
     <h2 id="home-sleep-control-title">{panel === 'music' ? 'QQ 音乐' : 'Mac 时钟'}</h2>
     <button ref={closeButton} type="button" onClick={() => onPanel(null)}>关闭</button>
    </header>
+   <FeatureGuide key={panel} feature={panel}/>
    {panel === 'music' ? <>
     <p>用这台 Mac 的 QQ 音乐听歌。</p>
     <div className="home-alarm-actions">

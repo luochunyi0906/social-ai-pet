@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -16,6 +17,7 @@ try{
   env:{...process.env,KANSHAN_DATA_DIR:profile},timeout:20000
  });
  const page=await app.firstWindow();
+ await skipGuide(page);
  await page.emulateMedia({reducedMotion:'no-preference'});
  const fox=page.locator('.desktop-pet [data-pet-appearance="fox"]');
  const daydream=fox.and(page.locator('[data-daydream]'));

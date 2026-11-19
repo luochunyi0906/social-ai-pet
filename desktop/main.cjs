@@ -5,12 +5,14 @@ const {places:{fox:foxOrigin}}=require('./pet-layout.json');
 const {preferences,validAppearance}=require('./window-preferences.cjs');
 const {outfitPreferences}=require('./outfit-preferences.cjs');
 const chatModel=require('./chat-model.cjs');
+const modelSettings=require('./model-settings.cjs');
+const dotenv=require('dotenv');
 const MODEL_KEYS=[...chatModel.KEYS,'MODEL_PROVIDER','ZHIDA_MODEL','MODEL_API_KEY','MODEL_BASE_URL','MODEL_NAME','MODEL_TOKEN_PARAMETER','MODEL_JSON_MODE','MODEL_TIMEOUT_MS','SEARCH_PROVIDER','SEARCH_API_KEY','ZHIHU_ACCESS_SECRET'];
 const startupEnvironment=Object.fromEntries(MODEL_KEYS.filter(name=>Object.hasOwn(process.env,name)).map(name=>[name,process.env[name]]));
 const isWoodlandPreview=require('../package.json').woodlandPreview===true;
 app.setPath('userData',process.env.KANSHAN_DATA_DIR?path.resolve(process.env.KANSHAN_DATA_DIR):path.join(app.getPath('appData'),isWoodlandPreview?'看山有伴-林间预览':'看山有伴-v0.3-preview'));
 const configPath=app.isPackaged?path.join(app.getPath('userData'),'model.env'):path.join(__dirname,'../.env');
-require('dotenv').config({quiet:true,path:configPath});
+dotenv.config({quiet:true,path:configPath});
 const localDirectory=app.isPackaged&&process.platform==='darwin'&&process.arch==='arm64'
  ?path.resolve(__dirname,'../../../../../../../..','.local-config'):null;
 const localChat=require('./local-chat.cjs').createLocalChat(localDirectory);
@@ -20,7 +22,7 @@ function zhihuEnvironment(){
    !Object.hasOwn(env,'ZHIHU_ACCESS_SECRET')){
   // Reuse only the credential of the previous Kanshan profile on this Mac.
   const previous=path.join(app.getPath('appData'),'看山有伴-v0.3-preview','model.env');
-  try{env.ZHIHU_ACCESS_SECRET=require('dotenv').parse(require('node:fs').readFileSync(previous)).ZHIHU_ACCESS_SECRET;}
+  try{env.ZHIHU_ACCESS_SECRET=dotenv.parse(require('node:fs').readFileSync(previous)).ZHIHU_ACCESS_SECRET;}
   catch{}
  }
  return env;
@@ -80,13 +82,35 @@ function handle(name,fn){ipcMain.handle(name,async(event,...args)=>{const inRoam
 function hasPending(){return pending.size||chat.busy()||teaching.busy();}
 function stop(){resetCaveVisit();void chat.cancel().catch(()=>{});teaching.cancel();for(const c of pending.values())c.abort();pending.clear();selected=null;selectionVersion++;selecting=false;}
 async function extractFile(file,signal){const stat=await fs.stat(file);if(stat.size>10*1024*1024)throw Error('文件超过 10 MB，请摘选内容后重试。');if(signal.aborted)throw new DOMException('Aborted','AbortError');const bytes=await fs.readFile(file,{signal});if(signal.aborted)throw new DOMException('Aborted','AbortError');if(path.extname(file).toLowerCase()==='.txt')return core.validateText(new TextDecoder('utf-8',{fatal:true}).decode(bytes));const {getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs');if(signal.aborted)throw new DOMException('Aborted','AbortError');const task=getDocument({data:new Uint8Array(bytes),isEvalSupported:false,disableFontFace:true,useSystemFonts:false});const cancel=()=>void task.destroy();signal.addEventListener('abort',cancel,{once:true});try{const doc=await task.promise;if(doc.numPages>80)throw Error('PDF 超过 80 页，请摘选部分页面。');let text='';for(let i=1;i<=doc.numPages;i++){if(signal.aborted)throw new DOMException('Aborted','AbortError');const p=await doc.getPage(i);const content=await p.getTextContent();if(!content.items.some(x=>x.str?.trim()))throw Error('PDF 含无可提取文字的页面，可能是扫描件；请先 OCR 或粘贴文本。');text+=content.items.map(x=>x.str||'').join(' ')+'\n';if(text.length>core.LIMIT)throw Error('PDF 文字超过 12000 字，请摘选内容。');}return core.validateText(text);}catch(e){if(e.name==='PasswordException')throw Error('暂不支持加密 PDF，请提供未加密副本。');throw e;}finally{signal.removeEventListener('abort',cancel);await task.destroy();}}
-handle('status',()=>({...model.publicStatus(),platform:process.platform}));
-handle('refresh-config',async()=>{
- if(hasPending())throw Error('请先完成或取消当前处理，再刷新配置。');
- let values={};try{values=require('dotenv').parse(await fs.readFile(configPath));}catch(e){if(e.code!=='ENOENT')throw Error('无法读取本机模型配置。');}
- for(const name of MODEL_KEYS){if(Object.hasOwn(values,name))process.env[name]=values[name];else if(Object.hasOwn(startupEnvironment,name))process.env[name]=startupEnvironment[name];else delete process.env[name];}
- return{...model.publicStatus(),platform:process.platform};
-});
+function modelStatus(){return {...model.publicStatus(),platform:process.platform};}
+function settingsView(){return modelSettings.publicSettings(process.env,zhihuEnvironment().ZHIHU_ACCESS_SECRET);}
+function applyModelConfig(values){
+ for(const name of MODEL_KEYS){
+  if(Object.hasOwn(values,name))process.env[name]=values[name];
+  else if(Object.hasOwn(startupEnvironment,name))process.env[name]=startupEnvironment[name];
+  else delete process.env[name];
+ }
+}
+let configChange;
+async function changeConfig(operation){
+ if(configChange||hasPending())throw Error('请先完成或取消当前处理，再修改模型配置。');
+ configChange=operation();
+ try{return await configChange;}
+ finally{configChange=undefined;}
+}
+handle('status',modelStatus);
+handle('refresh-config',()=>changeConfig(async()=>{
+ let values={};
+ try{values=dotenv.parse(await fs.readFile(configPath));}
+ catch(error){if(error.code!=='ENOENT')throw Error('无法读取本机模型配置。');}
+ applyModelConfig(values);
+ return modelStatus();
+}));
+handle('model-settings',settingsView);
+handle('save-model-settings',patch=>changeConfig(async()=>{
+ applyModelConfig(await modelSettings.saveSettings(configPath,patch,process.env));
+ return {settings:settingsView(),model:modelStatus(),chat:chatModel.publicStatus(chatConfiguration()),search:discovery.status()};
+}));
 handle('check-model',async p=>{
  if(!p||p.consent!==true)throw Error('请先同意向所选服务发送内置测试材料。');
  const config=model.configuration();model.requireConfiguration(config,p.configId);
@@ -270,9 +294,8 @@ handle('chase-start',()=>{
  if(Math.random()<.3)roam.chase();
 });
 handle('chase-stop',()=>roam.stopChase());
-let caveClicks=0,caveTicket,caveRewardWrite;
+let caveTicket,caveRewardWrite;
 function resetCaveVisit(){
- caveClicks=0;
  caveTicket=undefined;
 }
 async function caveRewardStatus(){
@@ -280,10 +303,7 @@ async function caveRewardStatus(){
  return windowPrefs.get().caveStickerReward===true;
 }
 handle('cave-visit',()=>{
- if(!win.isVisible())return null;
- caveClicks+=1;
- if(caveClicks<2)return null;
- caveClicks=0;
+ if(surface!=='panel'||!win.isVisible())return null;
  caveTicket={id:randomUUID(),issuedAt:performance.now()};
  return caveTicket.id;
 });
@@ -410,6 +430,13 @@ function reconcileDisplay() {
  rememberBounds();
  roam.reconcile();
 }
+function panelBounds(savedPanel, pet) {
+ const area=savedPanel?closestArea(savedPanel,'panel'):closestArea(pet,'pet');
+ const desired=savedPanel||{...PANEL_SIZE,
+  x:Math.round(area.x+(area.width-PANEL_SIZE.width)/2),
+  y:Math.round(area.y+(area.height-PANEL_SIZE.height)/2)};
+ return fitPanel(desired,area);
+}
 function setSurface(value) {
  if(!['pet','panel'].includes(value))throw Error('显示模式无效。');
  if(surface===value)return true;
@@ -420,11 +447,7 @@ function setSurface(value) {
  roam.setPanel(value==='panel');
  captureUntil=0;lastProbe=null;ignore(false);
  if(value==='panel'){
-  const area=saved.panel?closestArea(saved.panel,'panel'):closestArea(before,'pet');
-  const desired=saved.panel||{...PANEL_SIZE,
-   x:Math.round(area.x+(area.width-PANEL_SIZE.width)/2),
-   y:Math.round(area.y+(area.height-PANEL_SIZE.height)/2)};
-  const bounds=fitPanel(desired,area);
+  const bounds=panelBounds(saved.panel,before);
   win.setResizable(true);
   win.setMinimumSize(Math.min(600,bounds.width),Math.min(540,bounds.height));
   win.setAlwaysOnTop(false);
@@ -440,6 +463,11 @@ function setSurface(value) {
  return true;
 }
 handle('surface',setSurface);
+handle('guide-seen',async()=>{
+ windowPrefs.update({illustratedGuideSeen:true});
+ await windowPrefs.flush();
+ return true;
+});
 handle('window-drag-start',(payload,child)=>{
  if(payload?.surface==='roam')return !nativeDrag&&(child||surface==='pet')&&roam.start(payload,child);
  if(child)return false;
@@ -526,7 +554,7 @@ function requestWindowPlay(){
   }catch(error){sendWindowPlayNotice(error.message);}
  },220);
 }
-function contextMenu(){const menu=Menu.buildFromTemplate([{label:'打开好奇心营地',click:()=>action('camp')},{label:'回家',click:()=>{show();action('home');}},{label:'叫醒刘看山',click:()=>{show();action('wake');}},{label:'和刘看山聊聊',click:()=>action('chat')},{label:'打开山洞',click:()=>action('cave')},{label:'去窗口边上玩',click:requestWindowPlay},{label:'打开花园',click:()=>action('garden')},{label:'投喂内容',click:()=>action('feed')},{type:'separator'},{label:'暂停／恢复',click:()=>action('pause')},{label:'低打扰开关',click:()=>action('quiet')},{label:'模型与检索设置',click:()=>action('settings')},{label:'重置桌面布局',click:()=>action('reset-layout')},{label:'隐藏桌宠',click:()=>{stop();win.hide();}},{label:'退出',click:()=>{stop();app.quit();}}]);
+function contextMenu(){const menu=Menu.buildFromTemplate([{label:'打开好奇心营地',click:()=>action('camp')},{label:'回家',click:()=>{show();action('home');}},{label:'叫醒刘看山',click:()=>{show();action('wake');}},{label:'和刘看山聊聊',click:()=>action('chat')},{label:'打开山洞',click:()=>action('cave')},{label:'去窗口边上玩',click:requestWindowPlay},{label:'打开花园',click:()=>action('garden')},{label:'投喂内容',click:()=>action('feed')},{type:'separator'},{label:'暂停／恢复',click:()=>action('pause')},{label:'低打扰开关',click:()=>action('quiet')},{label:'模型与检索设置',click:()=>action('settings')},{label:'使用教程',click:()=>{show();action('tutorial');}},{label:'重置桌面布局',click:()=>action('reset-layout')},{label:'隐藏桌宠',click:()=>{stop();win.hide();}},{label:'退出',click:()=>{stop();app.quit();}}]);
  menu.on('menu-will-show',()=>roam.setMenu(true));
  menu.on('menu-will-close',()=>roam.setMenu(false));
  return menu;
@@ -562,9 +590,17 @@ app.whenReady().then(async()=>{
  const saved=windowPrefs.get().pet;
  const firstPosition=primary?defaultPet(primary):null;
  if(firstPosition&&isWoodlandPreview)firstPosition.x=primary.x+24;
- const initial=primary?(saved?fitPet(saved,closestArea(saved,'pet')):fitPet(firstPosition,primary)):PET_SIZE;
+ const initialPet=primary?(saved?fitPet(saved,closestArea(saved,'pet')):fitPet(firstPosition,primary)):PET_SIZE;
+ const firstGuide=!!primary&&!windowPrefs.get().illustratedGuideSeen;
+ const initial=firstGuide?panelBounds(windowPrefs.get().panel,initialPet):initialPet;
+ if(firstGuide){
+  if(!saved)windowPrefs.update({pet:{x:initialPet.x,y:initialPet.y}});
+  surface='panel';
+  roam.setPanel(true);
+ }
  win=new BrowserWindow({title:isWoodlandPreview?'看山有伴 · 林间预览':'看山有伴 · 好奇心花园',...initial,frame:false,transparent:true,backgroundColor:'#00000000',
-  resizable:false,hasShadow:false,alwaysOnTop:true,skipTaskbar:false,
+  resizable:firstGuide,hasShadow:false,alwaysOnTop:!firstGuide,skipTaskbar:false,
+  ...(firstGuide?{minWidth:Math.min(600,initial.width),minHeight:Math.min(540,initial.height)}:{}),
   webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
  win.webContents.on('will-navigate',e=>e.preventDefault());
@@ -595,7 +631,7 @@ app.whenReady().then(async()=>{
   weather.stop();
   hot.stop();
   localChat.stop();
-  void Promise.allSettled([queue,windowPrefs.flush(),outfitPrefs.flush(),chat.flush(),hot.flush(),proactive.flush(),recommendations.flush(),teachings.flush()]).then(()=>app.quit());
+  void Promise.allSettled([queue,configChange,windowPrefs.flush(),outfitPrefs.flush(),chat.flush(),hot.flush(),proactive.flush(),recommendations.flush(),teachings.flush()]).then(()=>app.quit());
  });
  const menu=Menu.buildFromTemplate([
   {label:'看山有伴',submenu:[{label:'显示桌宠',click:show},{label:'操作菜单',submenu:contextMenu()},
@@ -622,7 +658,7 @@ app.whenReady().then(async()=>{
   },25);
   app.on('before-quit',()=>clearInterval(probeTimer));
  }
- win.loadFile(path.join(__dirname,'../dist/index.html'));
+ win.loadFile(path.join(__dirname,'../dist/index.html'),firstGuide?{query:{guide:'1'}}:undefined);
 });
 app.on('activate',()=>{if(win)show();});
 app.on('window-all-closed',()=>app.quit());

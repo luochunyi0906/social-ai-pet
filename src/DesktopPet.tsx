@@ -135,7 +135,7 @@ export function DesktopPet({action,reason,onOpen,onInteraction,paused,quiet,slee
   {hotReminder&&<button type="button" className={'pet-hot-reminder '+(hotNotice?'pet-hot-bubble':'')} data-hit
    aria-label="查看今日热榜" title="今日热榜已到" onClick={onHot}>{hotNotice?'今日热榜已到':'•'}</button>}
   <button ref={gaze} type="button" className={`pet-piece pet-fox ${windowDrag.dragging?'is-dragging':''} ${away?'is-away':''}`} data-hit
-   aria-label="打开好奇心营地，可拖动刘看山" aria-haspopup="menu" style={spot('fox')} {...windowDrag.bindings}
+   aria-label="和刘看山互动，可双击打开营地" aria-haspopup="menu" title="单击互动，双击打开营地" style={spot('fox')} {...windowDrag.bindings}
    onPointerEnter={()=>{if(!windowDrag.dragging)onInteraction('look');}}
    onContextMenu={clicks.openMenu}
    onKeyDown={clicks.menuKey}

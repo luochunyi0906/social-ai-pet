@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm,writeFile} from 'node:fs/promises';
@@ -16,6 +17,7 @@ try{
  app=await electron.launch({executablePath:resolve(root,process.env.KANSHAN_PACKAGE_DIR||'release','看山有伴.app/Contents/MacOS/Kanshan'),
   env:{...process.env,KANSHAN_DATA_DIR:profile},timeout:20000});
  const page=await app.firstWindow();
+ await skipGuide(page);
  const menu=label=>app.evaluate(({Menu},label)=>{
   Menu.getApplicationMenu().items[0].submenu.items.find(item=>item.label==='操作菜单')
    .submenu.items.find(item=>item.label===label).click();

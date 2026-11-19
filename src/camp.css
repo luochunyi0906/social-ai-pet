@@ -16,7 +16,7 @@
   background: #9bb881;
   color: #354c38;
 }
-.camp-terrain {position:absolute;inset:0;background:url('./assets/terrain.png') center/cover;}
+.camp-terrain {position:absolute;inset:0;background:url('./assets/camp/terrain-mailbox-gate.png') center bottom/cover;}
 .camp-map {
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:min(100cqw,121.622cqh);aspect-ratio:900/740;
@@ -57,14 +57,42 @@
 }
 .camp-prop[aria-pressed=true] > span {border-color:#788c52;background:#e9eac9;}
 .camp-prop span b {background:#4d704e;color:#fffce9;padding:1px 5px;border-radius:10px;font-size:10px;}
-.camp-cave {left:8%;top:16.4%;width:28.5%;height:30.4%;z-index:1;}
-.camp-cabin {left:65.7%;top:19.8%;width:22.3%;height:29.2%;z-index:1;}
-.camp-seed {left:38.5%;top:38.9%;width:7.9%;height:11.1%;z-index:4;}
-.camp-mail {left:85.6%;top:47.2%;width:8.5%;height:16.4%;z-index:4;}
-.camp-water {left:74%;top:69.3%;width:8.2%;height:11.3%;z-index:4;}
-.camp-fertilizer {left:84.4%;top:72.4%;width:7.5%;height:10.9%;z-index:4;}
-.camp-bench {left:3%;top:55.9%;width:18.4%;height:20.8%;z-index:2;}
-.camp-fox {left:24.2%;top:54.5%;width:8.5%;height:15.4%;z-index:4;}
+.camp-cave {left:-3.5%;top:18.6%;width:26.5%;height:30.4%;z-index:1;}
+.camp-cave .camp-prop-art img {transform:rotate(10deg);transform-origin:83% 86%;}
+.camp-cave > span {left:100%;top:66%;bottom:auto;transform:none;}
+.camp-cabin {left:63.8%;top:19.8%;width:22.3%;height:29.2%;z-index:1;}
+.camp-cabin > span {left:97%;transform:none;}
+.camp-seed {left:44.1%;top:27.5%;width:7.9%;height:11.1%;z-index:4;}
+.camp-seed .camp-prop-art img {transform:rotate(-30deg);transform-origin:50% 85%;}
+.camp-prop.camp-mail {
+  /* Follow the entrance post in the cover image, including when the window crops it. */
+  --terrain-width:max(100cqw, calc(100cqh * 1383 / 1137));
+  --terrain-height:max(100cqh, calc(100cqw * 1137 / 1383));
+  --mail-width:min(12.9cqw, 15.69cqh);
+  left:calc(50% + var(--terrain-width) * .291 - var(--mail-width) / 2);
+  bottom:calc(var(--terrain-height) * .033);
+  width:var(--mail-width);
+  pointer-events:auto;
+  height:min(18.91cqw, 23cqh);
+  z-index:4;
+}
+.camp-mail .camp-prop-art {inset:0;}
+.camp-mail > span {left:0;top:3%;bottom:auto;transform:none;}
+.camp-bottom .camp-tools {margin-right:25cqw;}
+.camp-water,.camp-fertilizer {top:44.9%;height:8.8%;z-index:4;}
+.camp-water {left:63.9%;width:7.2%;}
+.camp-fertilizer {left:71.5%;width:6.8%;}
+.camp-glove {left:85.7%;top:49.7%;width:7.9%;height:9.4%;z-index:4;}
+.camp-bench {
+  --bench-scale:1.44;
+  left:.4%;bottom:13.3%;width:31%;
+  height:calc((19% - var(--prop-label-height)) * var(--bench-scale) + var(--prop-label-height));
+  z-index:2;
+}
+.camp-bench .camp-prop-art img {height:100%;aspect-ratio:1.25;}
+.camp-bench > span {left:auto;right:17%;top:7%;bottom:auto;transform:none;}
+.camp-view > .feature-guide-floating {top:clamp(65px,8.35cqw,75px);}
+.camp-fox {left:21%;top:43.5%;width:8.5%;height:15.4%;z-index:4;}
 .camp-fox::before,.camp-bench::before {
   content:'';position:absolute;left:15%;right:11%;height:12%;bottom:calc(var(--prop-label-height, 0px) - 4px);
   background:radial-gradient(ellipse,#24341e63,transparent 70%);pointer-events:none;
@@ -200,3 +228,15 @@
 .camp-replay-entry {margin-top:5px;}
 .camp-shell .modal :is(.setup-guide,.config-actions button,.dialog-actions button:not(.primary),.chat-line,.chat-lines,.connection-state) {border-color:#cfbb91;background:#f6ebce;}
 .camp-shell .modal :is(.dialog-actions button.primary,.setup-guide button.primary){background:#4d6846;color:#fffaf0;}
+
+.camp-layout-scene {--camp-layout-unit:min(calc(100cqw / 900), calc(100cqh / 740));}
+.camp-layout-scene.is-editing [data-layout-item] {cursor:grab;touch-action:none;user-select:none;}
+.camp-layout-scene.is-editing .camp-prop img,
+.camp-layout-scene.is-editing .camp-soil {cursor:grab;}
+.camp-layout-scene.is-editing .camp-rest-path {z-index:5;}
+.camp-layout-scene.is-editing .camp-rest-path img {pointer-events:auto;}
+.camp-layout-scene.is-editing [data-layout-item]:active,
+.camp-layout-scene.is-editing .camp-prop img:active {cursor:grabbing;}
+.camp-window-actions .camp-layout-action {width:auto;padding:0 8px;border-radius:9px;font-size:12px;white-space:nowrap;}
+.camp-bottom.camp-layout-controls .camp-tools {margin-right:0;}
+.camp-farm.is-harvesting .camp-plot.target .plant-flower image {pointer-events:visiblePainted;cursor:pointer;}

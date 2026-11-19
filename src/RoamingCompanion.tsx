@@ -26,7 +26,7 @@ export function RoamingCompanion(){
  },[]);
  return <CompanionProvider appearance={view.appearance} outfit={findOutfit(view.outfitId)} sleeping={view.sleeping} action={view.action} enabled cue={cue} motion={view.motion} motionEnabled={view.motionEnabled} walkingGif={view.walkingGif} daydream={view.daydream&&!dragging} weather={view.weather} caveOutfit={view.caveOutfit} windowPose={view.windowPose} stillIdle preloadBase onError={ignore}>
   <button ref={gaze} type="button" className={`roam-character pet-piece pet-fox ${view.appearance==='fox'?'roam-fox-form':''} ${dragging?'is-dragging':''}`}
-   aria-label="和刘看山聊聊，或拖动刘看山" aria-haspopup="menu" {...bindings}
+   aria-label="和刘看山互动，可双击打开聊天" aria-haspopup="menu" title="单击互动，双击打开聊天" {...bindings}
    onPointerDown={event=>{if(event.button===0&&event.isPrimary&&!event.ctrlKey)void bridge?.roamPress(true);bindings.onPointerDown(event);}}
    onPointerUp={event=>{bindings.onPointerUp(event);if(event.button===0&&event.isPrimary)void bridge?.roamPress(false);}}
    onPointerCancel={()=>{bindings.onPointerCancel();void bridge?.roamPress(false);}}

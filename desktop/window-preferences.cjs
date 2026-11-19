@@ -20,6 +20,7 @@ function normalize(value) {
  return {version:1,pet,panel,snow:typeof value.snow==='boolean'?value.snow:true,
   ...(validAppearance(value.appearance)?{appearance:value.appearance}:{}),
   ...(value.caveStickerReward===true?{caveStickerReward:true}:{}),
+  ...(value.illustratedGuideSeen===true?{illustratedGuideSeen:true}:{}),
   ...(value.wardrobeHintSeen===true?{wardrobeHintSeen:true}:{}),
   ...(typeof value.caveOutfit==='string'&&Object.hasOwn(caveWardrobe,value.caveOutfit)?{caveOutfit:value.caveOutfit}:{}),
   ...(validWeather(value.weather)?{weather:{enabled:value.weather.enabled,city:value.weather.city,chase:value.weather.chase===true}}:{}),

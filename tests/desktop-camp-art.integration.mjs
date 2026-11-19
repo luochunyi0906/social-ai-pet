@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -50,6 +51,7 @@ try {
     timeout: 20000,
   });
   const page = await app.firstWindow();
+  await skipGuide(page);
   page.setDefaultTimeout(8000);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const button = name => page.getByRole('button', { name, exact: true });
@@ -61,7 +63,7 @@ try {
   };
   const save = async () => JSON.parse(await readFile(savePath, 'utf8'));
 
-  await page.locator('.pet-fox .fox-nose').click();
+  await page.locator('.pet-fox .fox-nose').dblclick();
   await button('种子箱 · 1').waitFor();
   await resize(900, 740);
   if ((await button('营地飘雪').getAttribute('aria-pressed')) === 'true') await button('营地飘雪').click();
@@ -98,7 +100,7 @@ try {
   assert.equal(new Set(originalVarieties).size, 8);
 
   const bench = button('休息处，和刘看山聊聊');
-  const fox = button('和刘看山聊聊');
+  const fox = button('和刘看山互动，可双击打开聊天');
   const [a, b] = await Promise.all([bench.boundingBox(), fox.boundingBox()]);
   assert.ok(a.x + a.width + 10 <= b.x);
   await take('kanshan-camp-bench', { x: a.x - 14, y: Math.min(a.y, b.y) - 18,
@@ -106,7 +108,7 @@ try {
   await bench.click();
   await page.locator('.chat-modal').waitFor();
   await button('关闭对话').click();
-  await fox.click();
+  await fox.dblclick();
   await page.locator('.chat-modal').waitFor();
   await button('关闭对话').click();
 

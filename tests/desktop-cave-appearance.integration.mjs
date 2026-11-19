@@ -1,3 +1,4 @@
+import { skipGuide } from './skip-guide.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -30,6 +31,7 @@ async function start(){
   env:{...process.env,KANSHAN_DATA_DIR:profile},timeout:20000
  });
  page=await app.firstWindow();
+ await skipGuide(page);
  page.setDefaultTimeout(8000);
  await companion().waitFor();
 }
@@ -53,9 +55,9 @@ try{
  await start();
  assert.equal(await companion().getAttribute('data-pet-appearance'),null);
  await cave().click();
- assert.equal(await cave().isVisible(),true);
+ await picker().waitFor();
  assert.equal(await player().count(),0);
- await cave().click();
+ await button('山洞入口').click();
  await playing();
  await page.keyboard.press('Escape');
  await player().waitFor({state:'detached'});
@@ -69,7 +71,7 @@ try{
 
  await start();
  await companion().and(page.locator('[data-pet-appearance="human"]')).waitFor();
- await page.locator('.pet-fox .fox-costume-hit').click();
+ await page.locator('.pet-fox .fox-costume-hit').dblclick();
  await button('好奇心山洞').click();
  await picker().waitFor();
  assert.equal(await player().count(),0);
@@ -78,7 +80,7 @@ try{
  await playing();
  await player().evaluate(video=>{video.currentTime=video.duration-.2;});
  await player().waitFor({state:'detached'});
- await button('山洞入口').click();
+ await picker().waitFor();
  assert.equal(await player().count(),0);
  await page.keyboard.press('Escape');
  await companion().and(page.locator('[data-pet-appearance="fox"]')).waitFor();
