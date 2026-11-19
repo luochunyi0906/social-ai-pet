@@ -1,0 +1,53 @@
+.snowfall,.snowfall-layer {
+ position:absolute;
+ inset:0;
+ pointer-events:none;
+}
+.snowfall-layer {overflow:hidden;}
+.camp-snow {--snow-travel:calc(100cqh + 10px);}
+.camp-snow .snowfall-far {z-index:1;}
+.camp-snow .snowfall-mid {z-index:3;}
+.camp-snow .snowfall-near {z-index:4;}
+.pet-snowy-flurries {
+ inset:5px 15px 14px;
+ --snow-travel:165px;
+ /* Keep flakes within the illustrated garden when the desktop behind it is visible. */
+ clip-path:ellipse(49% 52% at 50% 50%);
+}
+.pet-snowy-flurries .snowfall-far {z-index:1;}
+.pet-snowy-flurries .snowfall-mid,
+.pet-snowy-flurries .snowfall-near {z-index:4;}
+.snowfall i {
+ position:absolute;
+ left:var(--snow-x);
+ top:-8px;
+ width:var(--snow-size);
+ height:var(--snow-size);
+ border-radius:50%;
+ background:radial-gradient(circle, #fff 32%, #f8fcffcb 57%, #e1f1ff00 74%);
+ pointer-events:none;
+ animation:snowfall-drift var(--snow-time) var(--snow-start) linear infinite;
+}
+.snowfall-near i {
+ background:radial-gradient(circle, #fffdf7 18%, #f8fcffaf 45%, #e8f5ff00 75%);
+}
+.snowfall-near .snowfall-crystal {
+ border-radius:0;
+ background:
+  linear-gradient(90deg,transparent 43%,#fffdf6 46% 54%,transparent 57%),
+  linear-gradient(30deg,transparent 43%,#f4fbff 46% 54%,transparent 57%),
+  linear-gradient(150deg,transparent 43%,#f4fbff 46% 54%,transparent 57%);
+ clip-path:circle(49%);
+}
+@keyframes snowfall-drift {
+ 0% {transform:translate3d(0,0,0) rotate(0);opacity:0;}
+ 10%,84% {opacity:var(--snow-opacity);}
+ 25% {transform:translate3d(calc(var(--snow-wind) * .25 + var(--snow-sway)),calc(var(--snow-travel) * .25),0) rotate(12deg);}
+ 50% {transform:translate3d(calc(var(--snow-wind) * .5 - var(--snow-sway)),calc(var(--snow-travel) * .5),0) rotate(26deg);}
+ 75% {transform:translate3d(calc(var(--snow-wind) * .75 + var(--snow-sway)),calc(var(--snow-travel) * .75),0) rotate(38deg);}
+ 100% {transform:translate3d(var(--snow-wind),var(--snow-travel),0) rotate(49deg);opacity:0;}
+}
+@media (prefers-reduced-motion:reduce) {
+ .snowfall {display:none;}
+ .snowfall i {animation:none;}
+}

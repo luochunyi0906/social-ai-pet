@@ -1,0 +1,76 @@
+{
+  "id": "forest-guide",
+  "name": "森林引路者",
+  "description": "披着苔绿斗篷，提一盏水晶灯去花园。",
+  "kind": "full-character",
+  "canvas": {
+    "width": 320,
+    "height": 320
+  },
+  "anchor": {
+    "x": 160,
+    "y": 315
+  },
+  "scale": 1.54,
+  "hitPath": "M98 287 Q92 271 109 259 L113 228 109 208 Q100 184 117 160 L121 139 139 128 153 141 169 129 182 134 188 154 L199 146 210 138 Q236 154 229 176 L219 194 216 216 206 234 207 252 212 280 201 295 191 311 134 313 126 296 Q111 302 98 287Z",
+  "preview": "INFJ_preview.gif",
+  "previewEdgeTrim": 1.35,
+  "actions": {
+    "idle": {
+      "frames": [
+        "INFJ_001.png"
+      ],
+      "fps": 1,
+      "loop": "hold",
+      "finish": "idle"
+    },
+    "showcase": {
+      "frames": [
+        "INFJ_001.png",
+        "INFJ_002.png",
+        "INFJ_003.png",
+        "INFJ_004.png",
+        "INFJ_005.png",
+        "INFJ_006.png",
+        "INFJ_007.png",
+        "INFJ_008.png",
+        "INFJ_009.png",
+        "INFJ_010.png",
+        "INFJ_011.png",
+        "INFJ_012.png",
+        "INFJ_013.png",
+        "INFJ_014.png",
+        "INFJ_015.png",
+        "INFJ_016.png",
+        "INFJ_017.png",
+        "INFJ_018.png",
+        "INFJ_019.png",
+        "INFJ_020.png",
+        "INFJ_021.png",
+        "INFJ_022.png",
+        "INFJ_023.png",
+        "INFJ_024.png",
+        "INFJ_025.png",
+        "INFJ_026.png",
+        "INFJ_027.png",
+        "INFJ_028.png",
+        "INFJ_029.png",
+        "INFJ_030.png",
+        "INFJ_031.png",
+        "INFJ_032.png"
+      ],
+      "fps": 20,
+      "loop": "once",
+      "finish": "idle"
+    }
+  },
+  "triggers": {
+    "found": "showcase",
+    "gardenlook": "showcase",
+    "showcase": "showcase"
+  },
+  "unsupported": {
+    "walk": "hold-idle",
+    "sleep": "shared-blanket"
+  }
+}

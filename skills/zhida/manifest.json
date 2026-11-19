@@ -1,0 +1,16 @@
+{
+  "id": "zhida",
+  "upstream": {
+    "version": "2.0.0",
+    "url": "https://developer.zhihu.com/download/zhida_skills.zip",
+    "archiveSha256": "938ccff4afd3c2447b0048ca12846a869ce59eda485bf07bf48a218807eb47fb",
+    "files": {
+      "upstream/SKILL.md": "71693a39127b17891342962912ef6fb5f8c44c88a18404da02a445e02b2e32d3",
+      "upstream/scripts/zhida.py": "79f176fd4bb34f6ae15ad94688204450cc4758bc821363e5bda8a18fa1915ab3"
+    }
+  },
+  "adapterVersion": 1,
+  "runtime": "electron-main",
+  "documentation": "kanshan/SKILL.md",
+  "entry": "kanshan/zhida.cjs"
+}

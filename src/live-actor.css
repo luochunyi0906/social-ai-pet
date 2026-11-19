@@ -1,0 +1,110 @@
+.pet-fox > .fox .weather-art path,.pet-fox > .fox .window-snow circle {pointer-events:none;}
+.weather-umbrella {transform-origin:180px 65px;animation:open-umbrella .55s ease-out both;}
+.weather-glasses {animation:put-on-glasses .65s ease-out both;}
+.weather-parka {animation:tuck-in .6s ease-out both;}
+@keyframes open-umbrella {from{opacity:0;scale:.48 .25}to{opacity:1;scale:1}}
+@keyframes put-on-glasses {from{opacity:0;translate:0 -8px}to{opacity:1;translate:0 0}}
+@keyframes tuck-in {from{opacity:0;translate:0 7px}to{opacity:1;translate:0 0}}
+.fox[data-window-pose] {transform-origin:50% 68%;}
+.fox[data-window-pose] .arm,.fox[data-window-pose] .leg,.fox[data-window-pose] .fox-torso,.fox[data-window-pose] .fox-face {transform-box:fill-box;transform-origin:center;}
+.fox[data-window-pose="look"] .fox-face {animation:window-look .55s ease-out both;}
+.fox[data-window-pose="approach"] .leg-left,.fox[data-window-pose="walk-away"] .leg-left {animation:window-step .32s ease-in-out infinite alternate;}
+.fox[data-window-pose="approach"] .leg-right,.fox[data-window-pose="walk-away"] .leg-right {animation:window-step .32s -.25s ease-in-out infinite alternate-reverse;}
+.fox[data-window-pose="climb"] .arm-left {transform-origin:top center;animation:window-grab .48s ease-in-out infinite alternate;}
+.fox[data-window-pose="climb"] .arm-right {transform-origin:top center;animation:window-grab .48s -.38s ease-in-out infinite alternate-reverse;}
+.fox[data-window-pose="climb"] .leg-left {animation:window-kick .4s ease-in-out infinite alternate;}
+.fox[data-window-pose="climb"] .leg-right {animation:window-kick .4s -.38s ease-in-out infinite alternate-reverse;}
+.fox[data-window-side="0"][data-window-pose="climb"] {rotate:9deg;}
+.fox[data-window-side="1"][data-window-pose="climb"] {rotate:-9deg;}
+.fox[data-window-pose="pull"] .arm {animation:window-pull .65s ease-out both;}
+.fox[data-window-pose="perch"] .leg-left {animation:window-swing .7s ease-in-out infinite alternate;}
+.fox[data-window-pose="perch"] .leg-right {animation:window-swing .74s -.6s ease-in-out infinite alternate-reverse;}
+.fox[data-window-pose="perch"] .fox-torso,.fox[data-window-pose="perch"] .fox-face {translate:0 13px;}
+.fox[data-window-pose="balance"] {animation:window-balance .32s ease-in-out both;}
+.fox[data-window-pose="fall"] {animation:window-fall .72s ease-in-out both;}
+.fox[data-window-pose="fall"] .arm {rotate:-40deg;}
+.fox[data-window-pose="land"] {animation:window-land .35s ease-out both;}
+.fox[data-window-pose="shake"] .arm-left {animation:window-pat .22s ease-in-out 3 alternate;}
+.fox[data-window-pose="shake"] .arm-right {animation:window-pat .22s -.12s ease-in-out 3 alternate-reverse;}
+.window-snow circle {animation:snow-off .7s ease-out both;}
+.window-snow circle:nth-child(even) {animation-direction:normal;translate:8px -5px;}
+@keyframes window-look {from{translate:0 0}to{translate:4px -8px}}
+@keyframes window-step {from{rotate:-17deg;translate:-4px -4px}to{rotate:17deg;translate:5px 1px}}
+@keyframes window-grab {from{rotate:-24deg;translate:0 -24px}to{rotate:-63deg;translate:0 -50px}}
+@keyframes window-kick {from{rotate:-13deg;translate:-3px -16px}to{rotate:20deg;translate:2px 1px}}
+@keyframes window-pull {0%{rotate:-55deg;translate:0 -40px}50%{rotate:-22deg;translate:0 -20px}100%{rotate:0deg;translate:0 0}}
+@keyframes window-swing {from{rotate:-12deg;translate:0 7px}to{rotate:10deg;translate:0 2px}}
+@keyframes window-balance {0%{rotate:0deg}60%{rotate:-15deg}100%{rotate:12deg}}
+@keyframes window-fall {from{rotate:12deg}55%{rotate:-20deg}to{rotate:0deg}}
+@keyframes window-land {0%{scale:1}28%{scale:1.08 .91}55%{scale:.97 1.02}100%{scale:1}}
+@keyframes window-pat {from{rotate:0deg}to{rotate:32deg;translate:8px -8px}}
+@keyframes snow-off {0%{opacity:0;transform:translateY(-6px)}22%{opacity:1}100%{opacity:0;transform:translateY(30px)}}
+.fox-motion-frame {overflow:hidden;pointer-events:none;}
+.fox-motion-strip {
+ transform-box:fill-box;
+ animation:fox-step-frames var(--fox-period) steps(var(--fox-frames),end) infinite;
+}
+.fox-appearance[data-window-pose] {transform-origin:50% 79%;}
+.fox-appearance[data-window-pose="look"] {animation:fox-edge-look .55s ease-out both;}
+.fox-appearance[data-window-pose="pull"] {animation:fox-pull-over .65s ease-in-out both;}
+.fox-appearance[data-window-pose="land"] {animation:fox-soft-land .35s ease-out both;}
+.fox-appearance[data-window-pose="shake"] {animation:fox-shake-snow .7s ease-in-out both;}
+.fox-perch-leg {transform-box:view-box;translate:0 -48px;animation:fox-perch-swing .85s ease-in-out infinite alternate;}
+.fox-perch-left {transform-origin:552px 1250px;}
+.fox-perch-right {transform-origin:726px 1250px;animation-direction:alternate-reverse;animation-delay:-.36s;}
+@keyframes fox-step-frames {to{transform:translateX(-100%);}}
+@keyframes fox-edge-look {45%,75%{rotate:-4deg;}}
+@keyframes fox-pull-over {0%{rotate:0deg;}55%{rotate:-12deg;}100%{rotate:0deg;}}
+@keyframes fox-soft-land {0%,100%{translate:0 0;}36%{translate:0 4px;}66%{translate:0 -1px;}}
+@keyframes fox-shake-snow {22%,66%{rotate:-4deg;}44%,88%{rotate:4deg;}}
+@keyframes fox-perch-swing {from{rotate:-5deg;}to{rotate:5deg;}}
+.home-wardrobe-glint {filter:drop-shadow(0 0 11px #ffce85);animation:wardrobe-glint 1.8s ease-out both;}
+@keyframes wardrobe-glint {50%{filter:drop-shadow(0 0 18px #ffd68f)}}
+@media(prefers-reduced-motion:reduce){.fox[data-window-pose],.fox[data-window-pose] *,.weather-art *,.home-wardrobe-glint{animation:none!important}}
+.pet-fox>.fox .actor-tears path {pointer-events:none;}
+.fox[data-gesture] {transform-origin:center 65%;}
+.fox[data-gesture="look"] .fox-face {animation:window-look 800ms ease-in-out alternate;}
+.fox-appearance[data-gesture="look"] {animation:portrait-look 850ms ease-out;}
+.fox[data-gesture="upset"] .arm {transform-box:fill-box;transform-origin:top;animation:window-grab .25s ease-out both;}
+.fox[data-gesture="upset"] .actor-tears {animation:tears .6s ease-out infinite;}
+.fox[data-gesture="wipe"] .arm-right {animation:window-pat .22s ease-in-out 2 alternate;}
+.fox[data-gesture="wipe"] .actor-tears {animation:tears .42s reverse both;}
+.fox[data-gesture="lift"] {transform-origin:50% 60%;animation:lift-swing .65s ease-in-out infinite alternate;}
+.fox-appearance[data-pet-appearance="human"][data-gesture="lift"] {transform-origin:50% 35%;}
+.fox[data-gesture="lift"] .arm-left,.fox[data-gesture="lift"] .leg-left {transform-box:fill-box;transform-origin:top;animation:window-kick .23s ease-in-out infinite alternate;}
+.fox[data-gesture="lift"] .arm-right,.fox[data-gesture="lift"] .leg-right {transform-box:fill-box;transform-origin:top;animation:window-kick .31s ease-in-out infinite alternate-reverse;}
+.fox[data-gesture="land"] {animation:window-land .34s ease-out both;}
+.pet-fox .pet-gaze-dot {
+ translate:calc(var(--pet-gaze-x,0) * 5px) calc(var(--pet-gaze-y,0) * 3px);
+ transition:translate .14s ease-out;
+}
+.portrait-gaze {opacity:0;transition:opacity .16s ease-out;}
+.pet-fox :is(.portrait-gaze,.portrait-collar) * {pointer-events:none;}
+[data-gaze-active] .portrait-gaze {opacity:1;}
+.portrait-iris {
+ translate:calc(var(--pet-gaze-x,0) * var(--pet-gaze-facing,1) * 18px) calc(var(--pet-gaze-y,0) * 11px);
+ transition:translate .14s ease-out;
+}
+[data-pet-appearance="human"] .portrait-iris {
+ translate:calc(var(--pet-gaze-x,0) * var(--pet-gaze-facing,1) * 7px) calc(var(--pet-gaze-y,0) * 5px);
+}
+.fox-appearance[data-pet-appearance="fox"][data-gesture="lift"] {transform-origin:65% 66%;}
+.fox-appearance[data-pet-appearance="human"][data-gesture="lift"] {transform-origin:57% 31%;}
+.fox-appearance[data-gesture="lift"] {animation:collar-swing .72s ease-in-out infinite alternate;}
+.fox-appearance[data-gesture="land"] {animation:fox-soft-land .34s ease-out both;}
+.fox-appearance[data-gesture="lift"] .portrait-collar {animation:collar-pull 140ms ease-out both;}
+.fox-appearance[data-gesture="land"] .portrait-collar {animation:collar-release 260ms ease-out both;}
+.fox[data-gesture="lift"] .classic-coat-collar {transform:translateY(-9px);}
+.fox[data-gesture="land"] .classic-coat-collar {animation:classic-collar-release 260ms ease-out both;}
+@keyframes classic-collar-release {from{transform:translateY(-9px);}to{transform:translateY(0);}}
+@keyframes collar-swing {from{rotate:-2.5deg;}to{rotate:3deg;}}
+@keyframes collar-pull {from{translate:0 var(--collar-rest);opacity:0;}to{translate:0 0;opacity:1;}}
+@keyframes collar-release {from{translate:0 0;opacity:1;}to{translate:0 var(--collar-rest);opacity:0;}}
+@media(prefers-reduced-motion:reduce){
+ .portrait-gaze,.portrait-iris,.pet-fox .pet-gaze-dot {transition:none;}
+ .fox-appearance[data-gesture="land"] .portrait-collar {opacity:0;}
+}
+@keyframes portrait-look {30%,68%{rotate:-3deg;translate:0 -3px}}
+@keyframes tears {from{opacity:.55;translate:0 -2px}to{opacity:1;translate:0 3px}}
+@keyframes lift-swing {from{rotate:-5deg}to{rotate:6deg}}
+@media(prefers-reduced-motion:reduce){.fox[data-gesture],.fox[data-gesture] *{animation:none!important}}

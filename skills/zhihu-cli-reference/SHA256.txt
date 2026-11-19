@@ -1,0 +1,4 @@
+6db8a4c5c3a45bd1a310ac14ec18448a61583f5463da9b578e3f51e93d8de254  skills/zhihu-cli-reference/upstream/SKILL.md
+ef20dc142b27aebabff55a81f5720066afbab8d2c58447d8343d9f7ce45fe6e6  skills/zhihu-cli-reference/upstream/manifest.json
+c4975ce1d9969bff2f99e494a8d3ce68052fa0632c0a795e0fe1fcbe75fd1749  skills/zhihu-cli-reference/upstream/references/cli.md
+d43e98da219818392eaf2295265b1fb2f0b8e955534cb149726363967372bb65  skills/zhihu-cli-reference/upstream/references/http-api.md

@@ -1,0 +1,4 @@
+// Explicit, public-keyword-only network diagnostic. No files, history or keys are logged.
+const fs=require('node:fs'),path=require('node:path'),search=require('../desktop/search.cjs');
+if(!process.argv.includes('--run')){console.log('Offline. Add --run to send four built-in public keyword sets to Bing RSS.');process.exit(0);}
+(async()=>{const configuration=search.config({SEARCH_PROVIDER:'bing-rss'}),records=[];for(const query of ['北极狐','拖延症','机器人 信任','香港 城市大学']){const started=Date.now();try{const result=await search.search(query,{configuration,configId:configuration.revision});records.push({checkedAt:new Date().toISOString(),durationMs:Date.now()-started,ok:true,...result});}catch(e){records.push({checkedAt:new Date().toISOString(),query,durationMs:Date.now()-started,ok:false,error:e.message});}console.log(JSON.stringify(records.at(-1)));}fs.writeFileSync(path.join(__dirname,'../artifacts/search-actual-v05-final.json'),JSON.stringify(records,null,2)+'\n');})();

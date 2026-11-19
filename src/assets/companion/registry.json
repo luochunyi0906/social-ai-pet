@@ -1,0 +1,244 @@
+{
+  "canvas": [
+    256,
+    256
+  ],
+  "footBaseline": 232,
+  "clips": {
+    "act_idle": {
+      "name": "待机",
+      "fps": 8,
+      "frames": [
+        "act_idle_001.png",
+        "act_idle_002.png",
+        "act_idle_003.png",
+        "act_idle_004.png",
+        "act_idle_005.png",
+        "act_idle_006.png",
+        "act_idle_007.png",
+        "act_idle_008.png"
+      ],
+      "sourceLoop": true,
+      "active": true,
+      "loop": [
+        0,
+        7
+      ]
+    },
+    "act_walk": {
+      "name": "走路",
+      "fps": 10,
+      "frames": [
+        "act_walk_001.png",
+        "act_walk_002.png",
+        "act_walk_003.png",
+        "act_walk_004.png",
+        "act_walk_005.png",
+        "act_walk_006.png",
+        "act_walk_007.png",
+        "act_walk_008.png"
+      ],
+      "sourceLoop": true,
+      "active": true,
+      "loop": [
+        0,
+        7
+      ]
+    },
+    "act_run": {
+      "name": "跑步",
+      "fps": 12,
+      "frames": [
+        "act_run_001.png",
+        "act_run_002.png",
+        "act_run_003.png",
+        "act_run_004.png",
+        "act_run_005.png",
+        "act_run_006.png",
+        "act_run_007.png",
+        "act_run_008.png"
+      ],
+      "sourceLoop": true,
+      "active": true,
+      "loop": [
+        0,
+        7
+      ]
+    },
+    "act_sit": {
+      "name": "坐下",
+      "fps": 8,
+      "frames": [
+        "act_sit_001.png",
+        "act_sit_002.png",
+        "act_sit_003.png",
+        "act_sit_004.png",
+        "act_sit_005.png",
+        "act_sit_006.png"
+      ],
+      "sourceLoop": false,
+      "active": true,
+      "enter": [
+        0,
+        5
+      ],
+      "hold": 5
+    },
+    "act_sleep": {
+      "name": "睡觉",
+      "fps": 6,
+      "frames": [
+        "act_sleep_001.png",
+        "act_sleep_002.png",
+        "act_sleep_003.png",
+        "act_sleep_004.png",
+        "act_sleep_005.png",
+        "act_sleep_006.png"
+      ],
+      "sourceLoop": true,
+      "active": false,
+      "enter": [
+        0,
+        5
+      ],
+      "hold": 5
+    },
+    "emo_happy": {
+      "name": "开心",
+      "fps": 8,
+      "frames": [
+        "emo_happy_001.png",
+        "emo_happy_002.png",
+        "emo_happy_003.png",
+        "emo_happy_004.png",
+        "emo_happy_005.png",
+        "emo_happy_006.png"
+      ],
+      "sourceLoop": false,
+      "active": true,
+      "enter": [
+        0,
+        5
+      ]
+    },
+    "emo_laugh": {
+      "name": "大笑",
+      "fps": 10,
+      "frames": [
+        "emo_laugh_001.png",
+        "emo_laugh_002.png",
+        "emo_laugh_003.png",
+        "emo_laugh_004.png",
+        "emo_laugh_005.png",
+        "emo_laugh_006.png"
+      ],
+      "sourceLoop": false,
+      "active": false
+    },
+    "emo_sleepy": {
+      "name": "困倦",
+      "fps": 6,
+      "frames": [
+        "emo_sleepy_001.png",
+        "emo_sleepy_002.png",
+        "emo_sleepy_003.png",
+        "emo_sleepy_004.png",
+        "emo_sleepy_005.png",
+        "emo_sleepy_006.png"
+      ],
+      "sourceLoop": true,
+      "active": false
+    },
+    "emo_surprised": {
+      "name": "惊讶",
+      "fps": 10,
+      "frames": [
+        "emo_surprised_001.png",
+        "emo_surprised_002.png",
+        "emo_surprised_003.png",
+        "emo_surprised_004.png",
+        "emo_surprised_005.png"
+      ],
+      "sourceLoop": false,
+      "active": false
+    },
+    "emo_sad": {
+      "name": "委屈",
+      "fps": 8,
+      "frames": [
+        "emo_sad_001.png",
+        "emo_sad_002.png",
+        "emo_sad_003.png",
+        "emo_sad_004.png",
+        "emo_sad_005.png",
+        "emo_sad_006.png"
+      ],
+      "sourceLoop": false,
+      "active": false
+    },
+    "emo_angry": {
+      "name": "生气",
+      "fps": 10,
+      "frames": [
+        "emo_angry_001.png",
+        "emo_angry_002.png",
+        "emo_angry_003.png",
+        "emo_angry_004.png",
+        "emo_angry_005.png",
+        "emo_angry_006.png"
+      ],
+      "sourceLoop": false,
+      "active": false
+    },
+    "emo_thinking": {
+      "name": "思考",
+      "fps": 6,
+      "frames": [
+        "emo_thinking_001.png",
+        "emo_thinking_002.png",
+        "emo_thinking_003.png",
+        "emo_thinking_004.png",
+        "emo_thinking_005.png",
+        "emo_thinking_006.png"
+      ],
+      "sourceLoop": true,
+      "active": true,
+      "loop": [
+        0,
+        2
+      ]
+    },
+    "emo_expect": {
+      "name": "期待",
+      "fps": 6,
+      "frames": [
+        "emo_expect_001.png",
+        "emo_expect_002.png",
+        "emo_expect_003.png",
+        "emo_expect_004.png",
+        "emo_expect_005.png",
+        "emo_expect_006.png"
+      ],
+      "sourceLoop": true,
+      "active": false
+    },
+    "emo_curious": {
+      "name": "好奇",
+      "fps": 6,
+      "frames": [
+        "emo_curious_001.png",
+        "emo_curious_002.png",
+        "emo_curious_003.png",
+        "emo_curious_004.png",
+        "emo_curious_005.png",
+        "emo_curious_006.png"
+      ],
+      "sourceLoop": false,
+      "active": true,
+      "enter": [
+        0,
+        5
+      ]
+    }
+  }
+}

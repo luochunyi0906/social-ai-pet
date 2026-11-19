@@ -1,0 +1,8 @@
+{
+ "emo_happy": {"label":"开心","caption":"给你鼓掌","frame":4},
+ "emo_laugh": {"label":"大笑","caption":"笑出声","frame":4},
+ "emo_curious": {"label":"好奇","caption":"让我看看","frame":5},
+ "emo_thinking": {"label":"思考","caption":"容我想想","frame":3},
+ "emo_expect": {"label":"期待","caption":"期待一下","frame":4},
+ "act_idle": {"label":"在听","caption":"我在听","frame":1}
+}

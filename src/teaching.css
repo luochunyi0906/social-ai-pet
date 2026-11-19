@@ -1,0 +1,35 @@
+.teaching-panel {display:flex;flex:1;flex-direction:column;gap:8px;min-height:0;}
+.camp-shell .teaching-panel button.primary,.camp-shell .teaching-journal button.primary {background:#496347;border-color:#3b533a;color:#fff8e5}
+.teaching-header {display:flex;align-items:center;justify-content:space-between;gap:12px;color:#4f6045}
+.teaching-header p {margin:0;overflow-wrap:anywhere;min-width:0}
+.teaching-header button {flex:none}
+.teaching-scroll {flex:1;min-height:80px;overflow:auto;overscroll-behavior:contain;padding:4px}
+.teaching-scroll .chat-message {margin:0 0 10px}
+.teaching-actions {display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.teaching-actions button[aria-pressed="true"] {background:#526745;color:#fff8e5;border-color:#45563d}
+.teaching-panel .teaching-scroll {max-height:none}
+.teaching-input {display:grid;gap:4px;margin:8px 0;color:#455741;font-size:13px}
+.teaching-input input,.teaching-input select,.teaching-fields input,.teaching-fields select,.teaching-fields textarea {
+ width:100%;min-width:0;padding:7px 9px;border:1px solid #c8b78d;border-radius:7px;background:#fffaf0;color:#2f4231;font:inherit;
+}
+.teaching-controls {display:grid;gap:6px;justify-items:start}
+.teaching-controls .chat-compose {width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.teaching-controls .teaching-input {margin:0}
+.teaching-controls textarea {width:100%;height:clamp(54px,11vh,85px);resize:vertical}
+.teaching-consent {display:flex;gap:6px;font-size:12px;line-height:1.5;color:#4f6045}
+.learning-card {padding:12px 15px;margin:8px 0;border:1px solid #cbb58a;border-radius:10px;background:#fff9e9;color:#354a35}
+.learning-card h3 {font-size:17px;margin:0 0 8px}
+.teaching-fields {display:grid;gap:9px}
+.teaching-fields label {display:grid;gap:3px;font-size:13px}
+.teaching-fields textarea {height:auto;min-height:42px;resize:vertical}
+.teaching-fields p,.teaching-origin p,.teaching-original p {white-space:pre-wrap;overflow-wrap:anywhere;margin:3px 0}
+.teaching-origin {padding:8px 10px;margin:0 0 9px;border-left:2px solid #899572;background:#f2e6ca;color:#394f3a;font-size:12px}
+.teaching-note {font-size:12px;color:#586452}
+.teaching-success {color:#365b3e;font-weight:600}
+.teaching-entry {display:grid;gap:5px;width:100%;margin:7px 0;text-align:left;white-space:normal}
+.teaching-entry span {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.teaching-entry small {color:#5a6252}
+.teaching-confirm {padding:8px 12px;border-left:2px solid #a26846}
+.teaching-review-actions {margin:0}
+.chat-teaching-reference {align-self:flex-start;margin:5px 0;padding:4px 9px;border:1px solid #b8c49f;border-radius:7px;background:#e8ecd6;color:#3e573a;font-size:12px}
+@media(max-height:600px){.learning-card {padding:9px 11px}.teaching-header p{font-size:13px}.teaching-controls{gap:4px}}

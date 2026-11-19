@@ -1,0 +1,35 @@
+{
+  "name": "kanshan-curiosity-garden",
+  "productName": "看山有伴",
+  "version": "0.9.9",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "start": "electron .",
+    "test": "node --test tests/*.test.mjs",
+    "desktop": "npm run build && electron .",
+    "test:desktop": "node tests/desktop-woodland.integration.mjs && node tests/desktop-home.integration.mjs",
+    "model:check": "node scripts/check-model.cjs",
+    "test:transport": "node --test tests/model.transport.mjs",
+    "package:mac": "npm run build && node scripts/package-mac.cjs",
+    "eval:language": "node scripts/evaluate-language.cjs"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "pdfjs-dist": "6.5.438",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "electron": "45.3.3",
+    "playwright": "^1.56.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2"
+  },
+  "woodlandPreview": true
+}

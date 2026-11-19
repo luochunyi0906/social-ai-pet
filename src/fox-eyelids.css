@@ -1,0 +1,55 @@
+.fox-appearance .fox-eyelids,
+.pet-fox > .fox .fox-eyelids path {
+ pointer-events:none;
+}
+.fox-eyelids {
+ opacity:0;
+ transition:opacity 120ms linear 480ms;
+}
+.fox-eyelids path {
+ transition:d 440ms cubic-bezier(.25,.15,.25,1);
+}
+.fox-eyelids .fox-lid-line {
+ fill:none;
+ stroke:#171d40;
+ stroke-linecap:round;
+ stroke-width:9;
+}
+.fox-lid-left .fox-lid-skin {
+ d:path("M431 665 C455 624 488 602 516 597 C542 590 565 594 581 603 L583 615 C538 596 479 623 437 670 Z");
+}
+.fox-lid-left .fox-lid-line {
+ d:path("M437 668 C471 621 533 590 579 614");
+}
+.fox-lid-right .fox-lid-skin {
+ d:path("M739 565 C755 532 779 522 802 520 C832 517 852 530 874 547 L874 557 C833 526 781 528 744 573 Z");
+}
+.fox-lid-right .fox-lid-line {
+ d:path("M744 571 C771 532 826 515 871 556");
+}
+[data-daydream] .fox-eyelids {
+ opacity:1;
+ transition-delay:0ms;
+}
+[data-daydream] .fox-eyelids path {
+ transition-duration:1150ms;
+ transition-timing-function:cubic-bezier(.35,.05,.3,1);
+}
+[data-daydream] .fox-lid-right path {transition-delay:55ms;}
+[data-daydream] .fox-lid-left .fox-lid-skin {
+ d:path("M431 665 C455 624 488 602 516 597 C542 590 565 594 581 603 L583 648 C532 629 483 653 437 675 Z");
+}
+[data-daydream] .fox-lid-left .fox-lid-line {
+ d:path("M437 673 C483 649 532 630 582 648");
+}
+[data-daydream] .fox-lid-right .fox-lid-skin {
+ d:path("M739 565 C755 532 779 522 802 520 C832 517 852 530 874 547 L874 571 C835 552 784 559 744 594 Z");
+}
+[data-daydream] .fox-lid-right .fox-lid-line {
+ d:path("M744 592 C786 558 835 552 872 571");
+}
+.fox-appearance[data-cave-outfit] {transition:rotate 550ms ease-out;}
+.fox-appearance[data-cave-outfit][data-daydream] {rotate:-1.8deg;}
+@media (prefers-reduced-motion:reduce) {
+ .fox-eyelids,.fox-eyelids path,.fox-appearance[data-cave-outfit] {transition:none;}
+}

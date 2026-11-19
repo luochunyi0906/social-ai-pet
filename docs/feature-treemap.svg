@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="665" viewBox="0 0 1120 665" role="img" aria-labelledby="title desc">
+<title id="title">看山有伴功能树图</title>
+<desc id="desc">四个功能分区共有十九个功能块。桌宠与环境六项，聊天与学习四项，探索与收藏四项，营地与小屋五项。</desc>
+<g font-family="PingFang SC, Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<rect x="0.00" y="0.00" width="1120.00" height="665.00" rx="16" fill="#fbfcfc"/>
+<text x="28.00" y="43.00" font-size="27" fill="#20323d" font-weight="700">看山有伴功能树图</text>
+<text x="29.00" y="67.00" font-size="13" fill="#546470" font-weight="400">面积按各分区列出的功能数分配</text>
+<rect x="28.00" y="89.00" width="632.40" height="283.16" rx="8" fill="#dce9f3"/>
+<text x="42.00" y="120.00" font-size="18" fill="#264a62" font-weight="700">桌宠与环境</text>
+<rect x="38.00" y="133.00" width="197.47" height="109.58" rx="6" fill="#f0f6fb"/>
+<text x="48.00" y="185.79" font-size="15" fill="#264a62" font-weight="700">桌面营地</text>
+<text x="48.00" y="205.79" font-size="12" fill="#264a62" font-weight="400">置顶 · 穿透 · 菜单</text>
+<rect x="245.47" y="133.00" width="197.47" height="109.58" rx="6" fill="#f0f6fb"/>
+<text x="255.47" y="185.79" font-size="15" fill="#264a62" font-weight="700">鼠标互动</text>
+<text x="255.47" y="205.79" font-size="12" fill="#264a62" font-weight="400">视线 · 抬头 · 三连点</text>
+<rect x="452.93" y="133.00" width="197.47" height="109.58" rx="6" fill="#f0f6fb"/>
+<text x="462.93" y="185.79" font-size="15" fill="#264a62" font-weight="700">发呆与散步</text>
+<text x="462.93" y="205.79" font-size="12" fill="#264a62" font-weight="400">两分钟 · 全桌面</text>
+<rect x="38.00" y="252.58" width="197.47" height="109.58" rx="6" fill="#f0f6fb"/>
+<text x="48.00" y="305.37" font-size="15" fill="#264a62" font-weight="700">真实窗口</text>
+<text x="48.00" y="325.37" font-size="12" fill="#264a62" font-weight="400">靠近 · 攀爬 · 停靠</text>
+<rect x="245.47" y="252.58" width="197.47" height="109.58" rx="6" fill="#f0f6fb"/>
+<text x="255.47" y="305.37" font-size="15" fill="#264a62" font-weight="700">今日气温与换装</text>
+<text x="255.47" y="325.37" font-size="12" fill="#264a62" font-weight="400">气温 · 服装 · 道具</text>
+<rect x="452.93" y="252.58" width="197.47" height="109.58" rx="6" fill="#f0f6fb"/>
+<text x="462.93" y="305.37" font-size="15" fill="#264a62" font-weight="700">雪地追逐</text>
+<text x="462.93" y="325.37" font-size="12" fill="#264a62" font-weight="400">限定区域 · 变向</text>
+<rect x="670.40" y="89.00" width="421.60" height="283.16" rx="8" fill="#e6e3f2"/>
+<text x="684.40" y="120.00" font-size="18" fill="#413866" font-weight="700">聊天与学习</text>
+<rect x="680.40" y="133.00" width="195.80" height="109.58" rx="6" fill="#f4f2fa"/>
+<text x="690.40" y="185.79" font-size="15" fill="#413866" font-weight="700">文字聊天</text>
+<text x="690.40" y="205.79" font-size="12" fill="#413866" font-weight="400">分会话 · 流式回复</text>
+<rect x="886.20" y="133.00" width="195.80" height="109.58" rx="6" fill="#f4f2fa"/>
+<text x="896.20" y="185.79" font-size="15" fill="#413866" font-weight="700">表情包</text>
+<text x="896.20" y="205.79" font-size="12" fill="#413866" font-weight="400">常用表情 · 山洞赠礼</text>
+<rect x="680.40" y="252.58" width="195.80" height="109.58" rx="6" fill="#f4f2fa"/>
+<text x="690.40" y="305.37" font-size="15" fill="#413866" font-weight="700">反向拜师</text>
+<text x="690.40" y="325.37" font-size="12" fill="#413866" font-weight="400">分享经验 · 确认学习卡</text>
+<rect x="886.20" y="252.58" width="195.80" height="109.58" rx="6" fill="#f4f2fa"/>
+<text x="896.20" y="305.37" font-size="15" fill="#413866" font-weight="700">主动陪伴</text>
+<text x="896.20" y="325.37" font-size="12" fill="#413866" font-weight="400">邀请 · 稍后 · 安静</text>
+<rect x="28.00" y="382.16" width="468.44" height="254.84" rx="8" fill="#e0ece5"/>
+<text x="42.00" y="413.16" font-size="18" fill="#305743" font-weight="700">探索与收藏</text>
+<rect x="38.00" y="426.16" width="219.22" height="95.42" rx="6" fill="#f1f7f3"/>
+<text x="48.00" y="471.87" font-size="15" fill="#305743" font-weight="700">投喂线索</text>
+<text x="48.00" y="491.87" font-size="12" fill="#305743" font-weight="400">文字 · TXT · PDF</text>
+<rect x="267.22" y="426.16" width="219.22" height="95.42" rx="6" fill="#f1f7f3"/>
+<text x="277.22" y="471.87" font-size="15" fill="#305743" font-weight="700">山洞探索桌</text>
+<text x="277.22" y="491.87" font-size="12" fill="#305743" font-weight="400">知乎检索 · 来源范围</text>
+<rect x="38.00" y="531.58" width="219.22" height="95.42" rx="6" fill="#f1f7f3"/>
+<text x="48.00" y="577.29" font-size="15" fill="#305743" font-weight="700">今日好奇心</text>
+<text x="48.00" y="597.29" font-size="12" fill="#305743" font-weight="400">热榜 · 推荐 · 回答</text>
+<rect x="267.22" y="531.58" width="219.22" height="95.42" rx="6" fill="#f1f7f3"/>
+<text x="277.22" y="577.29" font-size="15" fill="#305743" font-weight="700">收藏手账</text>
+<text x="277.22" y="597.29" font-size="12" fill="#305743" font-weight="400">来源 · 种子 · 回看</text>
+<rect x="506.44" y="382.16" width="585.56" height="254.84" rx="8" fill="#f0e1d0"/>
+<text x="520.44" y="413.16" font-size="18" fill="#64472e" font-weight="700">营地与小屋</text>
+<rect x="516.44" y="426.16" width="181.85" height="114.51" rx="6" fill="#fbf5ed"/>
+<text x="526.44" y="481.41" font-size="15" fill="#64472e" font-weight="700">花园</text>
+<text x="526.44" y="501.41" font-size="12" fill="#64472e" font-weight="400">九块田 · 照料</text>
+<rect x="708.30" y="426.16" width="181.85" height="114.51" rx="6" fill="#fbf5ed"/>
+<text x="718.30" y="481.41" font-size="15" fill="#64472e" font-weight="700">山洞彩蛋</text>
+<text x="718.30" y="501.41" font-size="12" fill="#64472e" font-weight="400">换装间视频 · 解锁</text>
+<rect x="900.15" y="426.16" width="181.85" height="114.51" rx="6" fill="#fbf5ed"/>
+<text x="910.15" y="481.41" font-size="15" fill="#64472e" font-weight="700">外貌与衣柜</text>
+<text x="910.15" y="501.41" font-size="12" fill="#64472e" font-weight="400">人狐切换 · 旋转试穿</text>
+<rect x="516.44" y="550.66" width="277.78" height="76.34" rx="6" fill="#fbf5ed"/>
+<text x="526.44" y="586.83" font-size="15" fill="#64472e" font-weight="700">休息与音乐</text>
+<text x="526.44" y="606.83" font-size="12" fill="#64472e" font-weight="400">床 · 夜曲 · QQ 音乐</text>
+<rect x="804.22" y="550.66" width="277.78" height="76.34" rx="6" fill="#fbf5ed"/>
+<text x="814.22" y="586.83" font-size="15" fill="#64472e" font-weight="700">系统闹钟</text>
+<text x="814.22" y="606.83" font-size="12" fill="#64472e" font-weight="400">快捷指令 · Mac 时钟</text>
+</g></svg>

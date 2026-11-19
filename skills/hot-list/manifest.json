@@ -1,0 +1,16 @@
+{
+  "id": "hot-list",
+  "upstream": {
+    "version": "2.0.0",
+    "url": "https://developer.zhihu.com/download/hot_list_skills.zip",
+    "archiveSha256": "db78b1c5eff762915f3808e6b3960a7481349854d90644d19142e3da3c7def0f",
+    "files": {
+      "upstream/SKILL.md": "caa7fb793ad1fd3e2dc24c39b5d32dfe9f774f59ef4a8a0e57e9b688202b26b2",
+      "upstream/scripts/hot-list.py": "7f5a9cc2b947fae2be1adbf6c6ca1d6c3d4e8596a5d13a2aa9f44273cb010891"
+    }
+  },
+  "adapterVersion": 1,
+  "runtime": "electron-main",
+  "documentation": "kanshan/SKILL.md",
+  "entry": "kanshan/hot-list.cjs"
+}
