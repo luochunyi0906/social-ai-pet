@@ -1,5 +1,6 @@
 import { FeatureGuide } from './FeatureGuide';
 import { FirstRunGuide } from './FirstRunGuide';
+import { useVisitStory } from './visit-story';
 import{PostCard}from'./PostCard';
 import{CampSheet,GardenPanel}from'./GardenPanel';
 import{DesktopPet,DEFAULT_PLACES}from'./DesktopPet';import{SearchPanel}from'./SearchPanel';import{ChatPanel}from'./ChatPanel';
@@ -15,6 +16,7 @@ import{Snowfall}from'./Snowfall';
 import {AppearancePicker} from './PetAppearance';
 import {prepareFoxWardrobe} from './FoxWardrobeArt';
 import {CaveCompanion,CaveReveal} from './CaveReveal';
+import {Icon} from './HotIcon';
 import {useDaydream} from './useDaydream';
 import {useListening} from './useListening';
 import {ListeningPanel} from './PetInteractionPanels';
@@ -22,6 +24,7 @@ import type {WeatherStatus} from './types';
 import './live-actor.css';
 import type {PetAppearance} from './types';
 import caveArt from './assets/camp/cave.png';
+const CaveLounge=React.lazy(()=>import('./CaveLounge').then(module=>({default:module.CaveLounge})));
 const bridge=window.kanshan;
 const wardrobeUnlockNotice='衣柜里，好像多了一些新东西。';
 const sampleRobot='研究材料摘选：机器人信任会受到外观、语言与互动经验影响。人们可能向机器人道谢，但这不一定表示他们相信机器人具有人类情感。';
@@ -32,6 +35,7 @@ const [guideError, setGuideError] = useState('');
 const [guideClosing, setGuideClosing] = useState(false);
 const savingGuide = useRef(false);
 const [campGuideOpen, setCampGuideOpen] = useState(false);
+const visitStory = useVisitStory();
 const[snow,setSnow]=useState(true);const[snowSaving,setSnowSaving]=useState(false);const[windowVisible,setWindowVisible]=useState(true);const[places,setPlaces]=useState<Record<string,{x:number;y:number}>>(DEFAULT_PLACES);const[surface,setSurface]=useState<'pet'|'panel'>(guideOpen?'panel':'pet');const[searchQuery,setSearchQuery]=useState<string|null>(null);const[posts,setPosts]=useState<Post[]>([]);const[searched,setSearched]=useState(false);const[searchReport,setSearchReport]=useState<SearchResponse|null>(null);const[showPartial,setShowPartial]=useState(false);const[postQuery,setPostQuery]=useState('');const[chatOpen,setChatOpen]=useState(false);const[chatSource,setChatSource]=useState<Post|null>(null);const[caveOpen,setCaveOpen]=useState(false);const[feed,setFeed]=useState(false);const[text,setText]=useState('');const[file,setFile]=useState<{token:string;name:string}|null>(null);const[consent,setConsent]=useState(false);const[mode,setMode]=useState<'sample'|'model'>('sample');const[status,setStatus]=useState<ModelStatus>({modelReady:false,destination:'尚未配置',platform:'browser',model:'',configId:'',issues:[],hasKey:false,timeoutMs:45000});const[modelOpen,setModelOpen]=useState(false);const[paused,setPaused]=useState(false);const[quiet,setQuiet]=useState(false);const[interaction,setInteraction]=useState('idle');const interactionRef=useRef('idle'),interactionTimer=useRef<ReturnType<typeof setTimeout>|null>(null);const[behaviorTick,setBehaviorTick]=useState(0);const[questions,setQuestions]=useState<Question[]>([]);const[simulated,setSimulated]=useState(true);const[garden,setGarden]=useState<Garden>({version:3,favorites:[],plants:[],revision:0,operations:[]});const[ready,setReady]=useState(false);const[busy,setBusy]=useState(false);const[error,setError]=useState('');const[toast,setToast]=useState('');const[choosing,setChoosing]=useState(false);const selectionPending=useRef(false);const[dragging,setDragging]=useState(false);const[phase,setPhase]=useState<FeedingPhase>('idle');const journey=useRef<AbortController|null>(null);const selection=useRef(0);const dragDepth=useRef(0);const request=useRef<string|null>(null);const alive=useRef(true);
 useEffect(() => {
  if (!guideOpen) return;
@@ -62,6 +66,7 @@ async function closeGuide(enterCamp: boolean) {
 }
 
 const [homeOpen,setHomeOpen]=useState(false);
+const [loungeOpen,setLoungeOpen]=useState(false);
 const [hotOpen,setHotOpen]=useState(false);
 const [hotQuick,setHotQuick]=useState(false);
 const [hotBadge,setHotBadge]=useState(false);
@@ -153,6 +158,7 @@ function returnToDesktop(){
  setPetInteraction(undefined);
  resetCaveClicks();
  setNewCaveGift(false);
+ setLoungeOpen(false);
  animation.clear();cancel();interact('idle');setHomeOpen(false);setHotOpen(false);setFeed(false);setCaveOpen(false);setModelOpen(false);setSearchQuery(null);setChatOpen(false);setFreshOpening(undefined);setSurface('pet');void bridge?.surface('pet');
 }
 function showPanel(name:string,openingId?:string){
@@ -162,6 +168,7 @@ function showPanel(name:string,openingId?:string){
  if(name==='cave')animation.feedback('emo_curious');
  setSurface('panel');void bridge?.surface('panel');
  setHomeOpen(name==='home');
+ setLoungeOpen(name==='lounge');
  setHotOpen(name==='hot');
  if(name!=='hot')setHotQuick(false);
  setCaveOpen(name==='cave');setFeed(name==='feed');setSearchQuery(null);setChatOpen(name==='chat');setModelOpen(name==='settings');
@@ -241,6 +248,9 @@ function openJournal(tab:'favorites'|'teaching',id:string){
 }
 function openHot(quick=false){
  setHotQuick(quick);setHotBadge(false);setHotNotice(false);showPanel('hot');
+}
+function openLoungeHot(){
+ setHotQuick(false);setHotBadge(false);setHotNotice(false);setHotOpen(true);
 }
 useEffect(()=>{
  if(!bridge?.hotTick)return;
@@ -366,7 +376,8 @@ async function save(q:Question,kind:Favorite['kind']){
 }
 async function open(words:string){if(!bridge)return;try{await unwrap(bridge.open(words));setToast('已交给浏览器打开搜索；搜索结果和原文尚未核验。');}catch(e){setError((e as Error).message);}}
 useEffect(()=>{setConsent(false);},[status.configId]);
-async function openPost(post:Post){if(bridge)try{await unwrap(bridge.openPost(post.sourceUrl||post.url));setToast('已打开对应知乎原文；页面可能需要登录，完整正文尚未核验。');}catch(e){setError((e as Error).message);}}
+async function openZhihuLink(url:string){if(bridge)try{await unwrap(bridge.openPost(url));setToast('已打开对应知乎原文；页面可能需要登录，完整正文尚未核验。');}catch(e){setError((e as Error).message);}}
+function openPost(post:Post){return openZhihuLink(post.sourceUrl||post.url);}
 async function savePost(post:Post,hot=false){
  if(!bridge)return;
  try{acceptFavorite(await unwrap(bridge.save({kind:'zhihu_post',title:post.title,keywords:post.title.slice(0,100),simulated:false,resultId:post.id})),
@@ -377,8 +388,8 @@ const actor=nextBehavior({...INITIAL_STATE,paused:paused||!windowVisible,sleepin
 useEffect(()=>{
  void bridge?.roamUpdate?.({outfitId,action:actorAction,sleeping,motion,daydream,motionEnabled:!paused&&!quiet&&!sleeping&&windowVisible,
   weatherBlocked:caveReveal!==undefined||interaction==='lift'||interaction==='land'||interaction==='upset',
-  blocked:guideOpen||sleeping||quiet||paused||!windowVisible||petInteraction!==undefined||chatOpen||homeOpen||hotOpen||caveOpen||feed||modelOpen||searchQuery!==null||busy});
-},[guideOpen,outfitId,appearance,actorAction,sleeping,daydream,quiet,paused,windowVisible,chatOpen,homeOpen,hotOpen,caveOpen,feed,modelOpen,searchQuery,busy,motion.clip,motion.stage,motion.since,motion.until,weather,wardrobe,caveReveal,interaction,petInteraction]);
+  blocked:guideOpen||sleeping||quiet||paused||!windowVisible||petInteraction!==undefined||chatOpen||homeOpen||loungeOpen||hotOpen||caveOpen||feed||modelOpen||searchQuery!==null||busy});
+},[guideOpen,outfitId,appearance,actorAction,sleeping,daydream,quiet,paused,windowVisible,chatOpen,homeOpen,loungeOpen,hotOpen,caveOpen,feed,modelOpen,searchQuery,busy,motion.clip,motion.stage,motion.since,motion.until,weather,wardrobe,caveReveal,interaction,petInteraction]);
 function acceptSearch(result:SearchResponse){
  setPosts(result.results);setSearchReport(result);setShowPartial(false);setPostQuery(result.query);setSearched(true);setCaveOpen(true);
 }
@@ -398,11 +409,13 @@ function dismissNotice(){
  if(windowPlayNotice)setWindowPlayNotice('');else setError('');
 }
 const scene=surface==='pet'?<div onDragEnter={dragEnter} onDragLeave={dragLeave} onDragOver={e=>{if(e.dataTransfer.types.includes('Files'))e.preventDefault();}} onDrop={drop}><DesktopPet places={places} setPlaces={setPlaces} action={actorAction} reason={reason} onOpen={showPanel} onInteraction={interact} paused={paused} quiet={quiet} sleeping={sleeping} onWake={()=>sleep(false)} snow={snow&&windowVisible} hotReminder={hotBadge&&!sleeping} hotNotice={hotNotice&&!quiet&&!paused} onHot={()=>openHot(true)} away={roam.away} invitation={invite} weather={weather} listening={listening} visible={windowVisible}/>{(windowPlayNotice||error)&&<div className="pet-error" data-hit role="alert">{windowPlayNotice||error}<button type="button" aria-label="关闭提示" onClick={dismissNotice}>×</button></div>}</div>: <main data-hit onContextMenu={e=>{e.preventDefault();void bridge?.menu();}} onDragEnter={dragEnter} onDragLeave={dragLeave} onDragOver={e=>{if(e.dataTransfer.types.includes('Files')){e.preventDefault();e.dataTransfer.dropEffect=busy?'none':'copy';}}} onDrop={drop}
- className={`camp-shell ${roam.away?'companion-away':''} ${caveOpen?'cave-open':''} ${paused?'paused':''} ${quiet||sleeping?'quiet':''}`}>
- {!homeOpen&&!hotOpen&&snow&&windowVisible&&!paused&&!quiet&&!sleeping&&<Snowfall surface="camp"/>}
- <div hidden={homeOpen||hotOpen} className="camp-view">
+ className={`camp-shell ${roam.away?'companion-away':''} ${paused?'paused':''} ${quiet||sleeping?'quiet':''}`}>
+ {!homeOpen&&!loungeOpen&&!hotOpen&&snow&&windowVisible&&!paused&&!quiet&&!sleeping&&<Snowfall surface="camp"/>}
+ <div hidden={homeOpen||loungeOpen||hotOpen} className="camp-view">
  {!guideOpen&&!caveOpen&&!feed&&!chatOpen&&!modelOpen&&<FeatureGuide feature="camp" floating openFirst={campGuideOpen}/>}
  <GardenPanel hasClues={questions.length>0||(searched&&(posts.length>0||!!searchReport?.partialResults?.length))}
+  visitStory={visitStory} visitVisible={!guideOpen&&!homeOpen&&!loungeOpen&&!hotOpen&&!caveOpen} wornFoxOutfit={appearance==='fox'&&wardrobe.unlocked?wardrobe.outfit:null}
+  onShowCamp={()=>{if(caveOpen)closeCave();}} onOpenVisitSource={openZhihuLink}
   snow={snow} snowSaving={snowSaving} onSnow={()=>void toggleSnow()} garden={garden} ready={ready} action={actorAction} reason={busy?phaseLabels[phase]:reason} quiet={paused||quiet||sleeping}
   blocked={busy||feed||searchQuery!==null||chatOpen||modelOpen} onGarden={acceptGarden} onActivity={interact} onOpenSource={openFavorite}
   onTeach={openTeaching} onTeachingConversation={openTeachingConversation} onFavorite={id=>openJournal('favorites',id)} journalNavigation={journalNavigation}
@@ -414,12 +427,22 @@ const scene=surface==='pet'?<div onDragEnter={dragEnter} onDragLeave={dragLeave}
   onWardrobeOpen={()=>setToast(message=>message===wardrobeUnlockNotice?'':message)}
   error={wardrobeError} onClearError={()=>setWardrobeError('')} canShowcase={!paused&&!quiet&&windowVisible} onSleep={sleep} onWear={wearOutfit} onShowcase={()=>interact('showcase')}
   onCamp={()=>setHomeOpen(false)} onCompact={returnToDesktop}/>}
- {hotOpen&&<HotList favorites={garden.favorites} action={actorAction} daily={hotQuick} onBack={()=>showPanel('cave')} onCompact={returnToDesktop}
+ {loungeOpen&&<div className="lounge-visibility" hidden={hotOpen}>
+  <React.Suspense fallback={<div className="lounge-loading" role="status">正在打开秘密基地…</div>}>
+   <CaveLounge action={actorAction} weather={weather} visible={windowVisible&&!hotOpen&&!chatOpen} onBack={()=>showPanel('cave')}
+    onCompact={returnToDesktop} onHot={openLoungeHot} onChat={()=>{setChatSource(null);setChatOpen(true);}}/>
+  </React.Suspense>
+ </div>}
+ {hotOpen&&<HotList favorites={garden.favorites} action={actorAction} daily={hotQuick} onBack={()=>{if(loungeOpen)setHotOpen(false);else showPanel('cave');}}
+  backLabel={loungeOpen?'返回茶几报纸':'返回山洞探索桌'} onCompact={returnToDesktop}
   onChat={post=>{animation.feedback('emo_curious');setChatSource(post);setChatOpen(true);}} onSave={post=>savePost(post,true)} onOpen={openPost}
   onSettings={()=>setModelOpen(true)} onReminderChange={()=>setReminderRevision(revision=>revision+1)} recommendationRevision={recommendationRevision}/>}
- {hotNotice&&!hotOpen&&!sleeping&&!quiet&&!paused&&!chatOpen&&!feed&&!modelOpen&&!searchQuery&&<button className="hot-daily-message" onClick={()=>openHot(true)}>今日热榜已到 · 和看山一起看看</button>}
+ {hotNotice&&!loungeOpen&&!hotOpen&&!sleeping&&!quiet&&!paused&&!chatOpen&&!feed&&!modelOpen&&!searchQuery&&<button className="hot-daily-message" onClick={()=>openHot(true)}>今日热榜已到 · 和看山一起看看</button>}
  {caveOpen&&<CampSheet title="山洞探索桌" detail="好奇心山洞" side="reading" onClose={closeCave}>
    <FeatureGuide feature="cave"/>
+   <button type="button" className="lounge-entry" onClick={()=>showPanel('lounge')}>
+    <Icon name="mountain"/><strong>进入秘密基地</strong>
+   </button>
    {!caveReveal&&newCaveGift&&<p className="cave-gift-notice" role="status">刘看山送了你 9 张 Q 版动图。聊天时可在「山洞赠礼」里发送。</p>}
    <div className="cave-actions">
      <button type="button" className="cave-entrance" onClick={playCaveReveal}><img src={caveArt} alt=""/>山洞入口</button>

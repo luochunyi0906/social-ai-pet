@@ -1,6 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import {defaultMotion,type ActorMotion} from './ActorAnimation';
 import { idleFrame, loadOutfitAction, type Outfit } from './outfits';
+import classicSit from './assets/companion/act_sit/act_sit_006.png';
+import foxSit from './assets/camp/seated/host.webp';
+import coldFoxSit from './assets/camp/seated/host-cold.webp';
+import { seatedCostumeArt } from './camp-seat-art';
 import {AppearanceArt} from './PetAppearance';
 import type {PetAppearance,WeatherLook,HumanWeather,WindowPose,CheekPose,ListeningStatus} from './types';
 import type {PetGesture} from './usePetClicks';
@@ -92,4 +96,19 @@ export function Companion({ paper = false,gesture,cheek,faceEnabled,listening }:
  return <ClassicWardrobeArt id={outfit?.id} motion={motion} windowPose={windowPose} gesture={gesture}
   animate={motionEnabled} weather={weather} raincoat={!outfit&&weatherUnlocked&&weather?.umbrella} frame={outfit?(frame??idleFrame(outfit)):undefined}
   showcase={Boolean(outfit&&frame&&frame!==idleFrame(outfit))} paper={paper}/>;
+}
+
+export function BenchCompanion({ action, gesture, inCave = false }: { action: string; gesture?: PetGesture; inCave?: boolean }) {
+ const { appearance, outfit, weather, caveOutfit } = useContext(AppearanceContext);
+ if (appearance === 'fox' || inCave) {
+  const worn = appearance === 'fox' ? caveOutfit : undefined;
+  const cold = worn === 'winter';
+  const wardrobeArt = !cold && weather?.clothing !== 'hot' ? seatedCostumeArt(worn) : undefined;
+  if (cold || wardrobeArt || !worn || inCave) return <img className="camp-seated-host-art" draggable={false}
+   data-mirrored={Boolean(wardrobeArt) || undefined} data-pet-appearance="fox"
+   data-cave-outfit={wardrobeArt ? worn : undefined} src={cold ? coldFoxSit : wardrobeArt || foxSit} alt=""/>;
+ } else if (appearance !== 'human' && (!outfit || outfit.id === 'default')) {
+  return <img className="camp-seated-host-art camp-seated-classic" draggable={false} src={classicSit} alt=""/>;
+ }
+ return <span className="camp-seated-host-art camp-seated-fallback"><Companion action={action} gesture={gesture}/></span>;
 }

@@ -24,7 +24,7 @@ const sample = [
 const tabs = [['all','全部'],['unread','未读'],['kept','已收藏']] as const;
 type Tab = typeof tabs[number][0];
 type Row = {id:string;title:string;rank:number;excerpt?:string;thumbnail?:string;post?:HotItem};
-type Props = {favorites:Favorite[];action:string;daily:boolean;onBack:()=>void;onCompact:()=>void;
+type Props = {favorites:Favorite[];action:string;daily:boolean;onBack:()=>void;backLabel?:string;onCompact:()=>void;
  onChat:(post:Post)=>void;onSave:(post:Post)=>Promise<void>;onOpen:(post:Post)=>Promise<void>;
  onReminderChange:()=>void;onSettings:()=>void;recommendationRevision:number};
 const demoRows:Row[]=sample.map(([title,excerpt,thumbnail],i)=>({id:'sample-'+i,title,rank:i+1,excerpt,thumbnail}));
@@ -40,7 +40,7 @@ function Picture({src,className}:{src:string;className:string}) {
 }
 const contentKey = (url:string) => url.replace(/^https:\/\/www\.zhihu\.com\/question\/\d+\/answer\//,'https://www.zhihu.com/answer/');
 
-export function HotList({favorites,action,daily,onBack,onCompact,onChat,onSave,onOpen,onSettings,onReminderChange,recommendationRevision}:Props) {
+export function HotList({favorites,action,daily,onBack,backLabel='返回山洞探索桌',onCompact,onChat,onSave,onOpen,onSettings,onReminderChange,recommendationRevision}:Props) {
  const actor=useActorEvents();
  const manualRefresh=useRef<string|null>(null);
  const [state,setState]=useState<HotState>();
@@ -157,7 +157,7 @@ export function HotList({favorites,action,daily,onBack,onCompact,onChat,onSave,o
  </div>;
  return <section className="hot-screen" aria-label="今日好奇心">
   <header className="hot-top">
-   <button className="hot-back" type="button" onClick={onBack} aria-label="返回山洞探索桌" title="返回山洞探索桌"><Icon name="back"/></button>
+   <button className="hot-back" type="button" onClick={onBack} aria-label={backLabel} title={backLabel}><Icon name="back"/></button>
    <div className="hot-brand" {...drag.bindings} title="拖动窗口"><Icon name="mountain"/><b>看山有伴</b></div>
    <button className="hot-outline" type="button" onClick={()=>{if(recommendations){onSettings();return;}setDraft(state?.prefs??{enabled:false,time:'09:00',count:5});setSettings(true);}}><Icon name="bell"/>{recommendations?'设置':'推送设置'}</button>
    <button className="hot-outline" type="button" onClick={onCompact}><Icon name="shrink"/>收回桌面</button>

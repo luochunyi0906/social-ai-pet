@@ -7,6 +7,7 @@ import seed from './assets/camp/seed.png';
 import water from './assets/camp/water.png';
 import sprout from './assets/camp/sprout.png';
 import cabin from './assets/camp/cabin.png';
+import bench from './assets/camp/bench-facing-cabin.webp';
 import bed from './assets/home/bed.png';
 import wardrobe from './assets/home/wardrobe.png';
 import outfit from './assets/outfits/forest-guide/front.webp';
@@ -16,10 +17,10 @@ const guides = {
   camp: {
     title: '营地怎么玩',
     steps: [
-      [cave, '山洞', '搜知乎、看热榜，收藏喜欢的发现。'],
+      [bench, '长椅', '点「坐一会儿」让两只看山坐着聊。再点一次起身。'],
       [seed, '花园', '从种子箱选种，种到空地上。'],
       [cabin, '暖木小屋', '回家休息、换装，打开床边桌。'],
-      [fox, '刘看山', '单击打招呼，双击聊天，或点长凳聊聊。'],
+      [fox, '刘看山', '单击打招呼，双击打开聊天。也可以拖一颗菜给访客。'],
     ],
   },
   feed: {
