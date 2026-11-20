@@ -6,6 +6,7 @@ const {promisify}=require('node:util');
 
 const exec=promisify(execFile);
 const QQ_MUSIC='com.tencent.QQMusicMac';
+const NETEASE_MUSIC='com.netease.163music';
 const CLOCK='com.apple.clock';
 const SHORTCUTS='com.apple.shortcuts';
 const ALARM_SHORTCUT='看山有伴·创建系统闹钟';
@@ -37,6 +38,11 @@ async function music(action,choose){
  try{await openApp(QQ_MUSIC,file);}
  catch{throw Error('无法打开 QQ 音乐，请确认 Mac 已安装 QQ 音乐。');}
  return {state:file?'handedOff':'opened'};
+}
+async function openNetEaseMusic(){
+ try{await openApp(NETEASE_MUSIC);}
+ catch{throw Error('无法打开网易云音乐，请先安装网易云音乐 Mac 客户端。');}
+ return {state:'opened'};
 }
 
 async function clock(action){
@@ -116,4 +122,4 @@ async function addAlarm(time){
  }
 }
 
-module.exports={music,clock,addAlarm,alarmDate,alarmStatus,selectAlarmShortcut,AUDIO_EXTENSIONS};
+module.exports={music,openNetEaseMusic,clock,addAlarm,alarmDate,alarmStatus,selectAlarmShortcut,AUDIO_EXTENSIONS};

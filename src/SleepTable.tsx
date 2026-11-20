@@ -79,6 +79,13 @@ export function SleepTable({ panel, onPanel }: {
    if (result.state === 'opened') setMusicStatus('已打开 QQ 音乐，可在客户端选择歌单或歌曲。');
   });
  }
+ function netEaseMusic() {
+  setMusicStatus('');
+  void run(async bridge => {
+   await unwrap(bridge.sleepMusicNetEase());
+   setMusicStatus('已打开网易云音乐，请在客户端登录并选择歌单或歌曲。');
+  });
+ }
 
  function clock(action: 'open' | 'install') {
   void run(async bridge => {
@@ -120,13 +127,16 @@ export function SleepTable({ panel, onPanel }: {
   </div>
   {panel && <section className="home-sleep-controls" aria-labelledby="home-sleep-control-title">
    <header>
-    <h2 id="home-sleep-control-title">{panel === 'music' ? 'QQ 音乐' : 'Mac 时钟'}</h2>
+    <h2 id="home-sleep-control-title">{panel === 'music' ? '睡眠音乐' : 'Mac 时钟'}</h2>
     <button ref={closeButton} type="button" onClick={() => onPanel(null)}>关闭</button>
    </header>
    <FeatureGuide key={panel} feature={panel}/>
    {panel === 'music' ? <>
-    <p>用这台 Mac 的 QQ 音乐听歌。</p>
+    <p>选择音乐客户端播放。账号登录和选歌由客户端处理。</p>
     <MusicButtons busy={busy} onAction={music}/>
+    <div className="home-alarm-actions">
+     <button disabled={busy} type="button" onClick={netEaseMusic}>打开网易云音乐</button>
+    </div>
     {musicStatus && <p role="status">{musicStatus}</p>}
    </> : <form onSubmit={event => { event.preventDefault(); createAlarm(); }}>
     <label htmlFor="home-alarm-time">响铃时间</label>

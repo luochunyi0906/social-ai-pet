@@ -6,12 +6,12 @@
 
 - core.cjs：输入、URL、模型结构及legacy schema1校验。
 - store-v2.cjs：旧来源类型、收藏去重与迁移基础，不再直接承担新种植状态。
-- garden.cjs：schema3，稳定favoriteId/plantId，9地块、单种子关联、资源/阶段、幂等操作与兼容迁移。
+- garden.cjs：schema3，稳定favoriteId/plantId，9地块、收藏种子关联、可重复品种、采集图册、资源/阶段、幂等操作与兼容迁移。
 - search.cjs：Bing RSS实验入口/Brave，URL规范化、标题匹配、诊断、主进程来源收据。只取得index_only，不抓取正文。
 - model.cjs/persona.cjs：HTTPS兼容接口、有限tone、提示词和少量原创示例；会话只存主进程内存最近6轮。
 - main.tsx/shared/behavior.mjs：唯一行为控制器，事件优先级、中断与恢复。
 - DesktopPet/shared/layout.mjs：透明道具、捕获拖动、边界和标签碰撞拒绝。
-- GardenPanel/Plant 与 camp.css：展开后的营地、种子箱、选田确认、手动照料、手账与临时矢量阶段。背景与道具 PNG 由 Vite 复制进应用资源。弹窗中的Fox只消费同一个action/reason，不另建状态机。
+- GardenPanel/Plant 与 camp.css：展开后的营地、种子箱和固定九种品种选择、第一块空田直接播种、采种手套、手动照料、植物图册、手账与临时矢量阶段。背景与道具 PNG 由 Vite 复制进应用资源。弹窗中的Fox只消费同一个action/reason，不另建状态机。
 
 load/save/update/garden-action共用串行队列，临时文件+fsync+rename。退出先关闭新请求，再等待写队列。garden-v3优先读取，否则读v2/v1并生成v3；结构损坏停止写入，旧数据字节不覆盖。revision防止旧响应覆盖新状态；最近100次操作签名防重复，其余土地/资源约束继续防重。
 

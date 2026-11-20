@@ -8,9 +8,10 @@ async function main(){
  const metadata=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8'));
  const electronRoot=path.dirname(require.resolve('electron/package.json'));
  const vendor=path.join(electronRoot,'dist/Electron.app');
- const output=path.resolve(root,process.env.KANSHAN_PACKAGE_DIR||'release','看山有伴.app');
- try{await fs.lstat(output);throw Error('应用已存在。先备份或重命名release中的旧应用，再重新打包。');}catch(e){if(e.code!=='ENOENT')throw e;}
- await fs.mkdir(path.dirname(output),{recursive:true});
+ const finalOutput=path.resolve(root,process.env.KANSHAN_PACKAGE_DIR||'release','看山有伴.app');
+ const output=finalOutput+'.building';
+ await fs.rm(output,{recursive:true,force:true});
+ await fs.mkdir(path.dirname(finalOutput),{recursive:true});
  await fs.cp(vendor,output,{recursive:true,preserveTimestamps:true,verbatimSymlinks:true});
  const resources=path.join(output,'Contents/Resources');const application=path.join(resources,'app');await fs.mkdir(application);
  const runtimePackage={woodlandPreview:metadata.woodlandPreview===true,name:metadata.name,productName:metadata.productName,version:metadata.version,main:'desktop/main.cjs',private:true,type:'module'};
@@ -58,6 +59,17 @@ async function main(){
  // Local ad-hoc signing only; no system settings or Gatekeeper exceptions are changed.
  run('/usr/bin/codesign',['--force','--deep','--sign','-',output]);
  run('/usr/bin/codesign',['--verify','--deep','--strict',output]);
- console.log(JSON.stringify({application:output,version:metadata.version,signature:'local ad-hoc; verified',external_links:false,private_files:false}));
+ const previous=finalOutput+'.previous';
+ await fs.rm(previous,{recursive:true,force:true});
+ let movedPrevious=false;
+ try{
+  try{await fs.rename(finalOutput,previous);movedPrevious=true;}catch(error){if(error.code!=='ENOENT')throw error;}
+  await fs.rename(output,finalOutput);
+  if(movedPrevious)await fs.rm(previous,{recursive:true,force:true});
+ }catch(error){
+  if(movedPrevious)await fs.rename(previous,finalOutput).catch(()=>{});
+  throw error;
+ }
+ console.log(JSON.stringify({application:finalOutput,version:metadata.version,signature:'local ad-hoc; verified',external_links:false,private_files:false}));
 }
 main().catch(error=>{console.error(error.message);process.exitCode=1;});

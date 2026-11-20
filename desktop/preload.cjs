@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('kanshan',{
  onKnockMode:fn=>{const cb=(_event,p)=>fn(p);ipcRenderer.on('knock-mode-state',cb);return()=>ipcRenderer.removeListener('knock-mode-state',cb);},
  cheekCapture:active=>ipcRenderer.invoke('cheek-capture',active),
  sleepMusic:mode=>ipcRenderer.invoke('sleep-music',mode),
+ sleepMusicNetEase:()=>ipcRenderer.invoke('sleep-music-netease'),
  sleepClock:action=>ipcRenderer.invoke('sleep-clock',action),
  sleepAlarmStatus:()=>ipcRenderer.invoke('sleep-alarm-status'),
  addSystemAlarm:time=>ipcRenderer.invoke('sleep-alarm-add',time),

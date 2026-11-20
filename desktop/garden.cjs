@@ -7,14 +7,13 @@ const stageFor=g=>g>=100?'flower':g>=50?'growing':g>=25?'sprout':'planted';
 const round=n=>Math.round(n*1000)/1000,stamp=n=>new Date(n).toISOString();
 const validTime=t=>typeof t==='string'&&Number.isFinite(Date.parse(t));
 function validate(s){
- if(s?.version!==3||!Array.isArray(s.plants)||s.plants.length>9||!Number.isInteger(s.revision)||s.revision<0||!Array.isArray(s.operations)||s.operations.length>100)throw Error('花园数据格式不兼容，已停止写入。');
- legacy.validate({version:2,favorites:s.favorites});const ids=new Set(),used=new Set(),refs=new Set(),varieties=new Set();
- for(const p of s.plants){const f=s.favorites.find(f=>f.id===p?.favoriteId);
-  if(!p||typeof p.id!=='string'||ids.has(p.id)||!f||refs.has(f.id)||!Number.isInteger(p.slot)||p.slot<0||p.slot>8||used.has(p.slot)||f.slot!==p.slot||!['water','nutrients','growth'].every(k=>Number.isFinite(p[k])&&p[k]>=0&&p[k]<=100)||p.stage!==stageFor(p.growth)||!validTime(p.plantedAt)||!validTime(p.updatedAt)||!(p.wateredAt===null||validTime(p.wateredAt))||!(p.fertilizedAt===null||validTime(p.fertilizedAt)))throw Error('植物关联或状态损坏，已停止写入。');
-  ids.add(p.id);used.add(p.slot);refs.add(f.id);
+ if(s?.version!==3||!Array.isArray(s.plants)||s.plants.length>9||!Number.isInteger(s.revision)||s.revision<0||!Array.isArray(s.operations)||s.operations.length>100||(s.collected!==undefined&&(!Array.isArray(s.collected)||s.collected.some(v=>!VARIETIES.includes(v)))))throw Error('花园数据格式不兼容，已停止写入。');
+ legacy.validate({version:2,favorites:s.favorites});const ids=new Set(),used=new Set(),refs=new Set();
+ for(const p of s.plants){const linked=typeof p?.favoriteId==='string',f=linked?s.favorites.find(f=>f.id===p.favoriteId):null;
+  if(!p||typeof p.id!=='string'||ids.has(p.id)||(linked&&(!f||refs.has(f.id)||f.slot!==p.slot))||(!linked&&p.favoriteId!==null)||!Number.isInteger(p.slot)||p.slot<0||p.slot>8||used.has(p.slot)||!['water','nutrients','growth'].every(k=>Number.isFinite(p[k])&&p[k]>=0&&p[k]<=100)||p.stage!==stageFor(p.growth)||!validTime(p.plantedAt)||!validTime(p.updatedAt)||!(p.wateredAt===null||validTime(p.wateredAt))||!(p.fertilizedAt===null||validTime(p.fertilizedAt)))throw Error('植物关联或状态损坏，已停止写入。');
+  ids.add(p.id);used.add(p.slot);if(f)refs.add(f.id);
   if(p.variety!==undefined){
-   if(!VARIETIES.includes(p.variety)||varieties.has(p.variety))throw Error('植物品种数据损坏，已停止写入。');
-   varieties.add(p.variety);
+   if(!VARIETIES.includes(p.variety))throw Error('植物品种数据损坏，已停止写入。');
   }
  }
  if(s.favorites.some(f=>f.slot!==null&&!refs.has(f.id)))throw Error('收藏与土地关联损坏，已停止写入。');
@@ -56,7 +55,7 @@ function from(data,now=Date.now()){
  if(data?.version===3)return assignSavedVarieties(validate(data));const s=legacy.validate(data),time=stamp(now);
  return assignSavedVarieties(validate({version:3,revision:0,favorites:s.favorites,plants:s.favorites.filter(f=>f.slot!==null).map(f=>({id:'plant:'+f.id,favoriteId:f.id,slot:f.slot,stage:'flower',water:100,nutrients:100,growth:100,plantedAt:validTime(f.createdAt)?f.createdAt:time,updatedAt:time,wateredAt:time,fertilizedAt:time,legacy:true})),operations:[]}));
 }
-function empty(){return{version:3,revision:0,favorites:[],plants:[],operations:[]};}
+function empty(){return{version:3,revision:0,favorites:[],plants:[],collected:[],operations:[]};}
 function advance(data,now=Date.now()){
  const s=from(data,now);const plants=s.plants.map(p=>{
   const last=Date.parse(p.updatedAt),end=Math.max(last,now),elapsed=end-last;
@@ -79,18 +78,21 @@ function update(data,p,now=Date.now()){
 }
 function act(data,p,now=Date.now()){
  const s=advance(data,now);if(!p||typeof p.id!=='string'||!/^[a-zA-Z0-9-]{8,80}$/.test(p.id)||!['plant','water','fertilize','harvest'].includes(p.action))throw Error('花园操作无效。');
- const signature=createHash('sha256').update(JSON.stringify([p.action,p.favoriteId??null,p.plantId??null,p.slot??null])).digest('hex');const old=s.operations.find(x=>x.id===p.id);
+ const signature=createHash('sha256').update(JSON.stringify([p.action,p.favoriteId??null,p.plantId??null,p.slot??null,p.variety??null])).digest('hex');const old=s.operations.find(x=>x.id===p.id);
  if(old){if(old.signature!==signature)throw Error('操作标识重复，请重新操作。');return s;}
  let next;
  if(p.action==='plant'){
-  const f=s.favorites.find(f=>f.id===p.favoriteId);if(!f)throw Error('这颗种子已不存在。');if(s.plants.some(x=>x.favoriteId===f.id))throw Error('这颗种子已经播种。');if(!Number.isInteger(p.slot)||p.slot<0||p.slot>8||s.plants.some(x=>x.slot===p.slot))throw Error('土地已被占用，请重新选择。');
-  const time=stamp(now),variety=availableVariety(new Set(s.plants.map(x=>x.variety)),f.id);
-  next={...s,favorites:s.favorites.map(x=>x.id===f.id?{...x,slot:p.slot}:x),plants:[...s.plants,{id:'plant:'+f.id+':'+p.id,favoriteId:f.id,slot:p.slot,variety,stage:'planted',water:20,nutrients:10,growth:0,plantedAt:time,updatedAt:time,wateredAt:null,fertilizedAt:null,legacy:false}]};
+  const direct=p.favoriteId===undefined||p.favoriteId===null;
+  const f=direct?null:s.favorites.find(f=>f.id===p.favoriteId);if(!direct&&!f)throw Error('这颗种子已不存在。');if(f&&s.plants.some(x=>x.favoriteId===f.id))throw Error('这颗种子已经播种。');if(!Number.isInteger(p.slot)||p.slot<0||p.slot>8||s.plants.some(x=>x.slot===p.slot))throw Error('土地已被占用，请重新选择。');
+  const used=new Set(s.plants.map(x=>x.variety));
+  if(p.variety!==undefined&&!VARIETIES.includes(p.variety))throw Error('植物品种无效，请重新选择。');
+  const time=stamp(now),variety=p.variety??availableVariety(used,f?.id??p.id);
+  next={...s,favorites:f?s.favorites.map(x=>x.id===f.id?{...x,slot:p.slot}:x):s.favorites,plants:[...s.plants,{id:'plant:'+(f?.id??'direct')+':'+p.id,favoriteId:f?.id??null,slot:p.slot,variety,stage:'planted',water:20,nutrients:10,growth:0,plantedAt:time,updatedAt:time,wateredAt:null,fertilizedAt:null,legacy:false}]};
  }else{
   const plant=s.plants.find(x=>x.id===p.plantId);if(!plant)throw Error('植物已不存在，请重新打开花园。');
   if(p.action==='harvest'){
    if(plant.stage!=='flower')throw Error('还没成熟，等它开花后再采种。');
-   next={...s,
+   next={...s,collected:[...new Set([...(s.collected||[]),plant.variety])],
     favorites:s.favorites.map(f=>f.id===plant.favoriteId?{...f,slot:null}:f),
     plants:s.plants.filter(x=>x.id!==plant.id)};
   }else{

@@ -348,6 +348,7 @@ handle('sleep-music',mode=>nativeSleep.music(mode,async()=>{
   filters:[{name:'音频',extensions:nativeSleep.AUDIO_EXTENSIONS}]});
  return result.canceled?null:result.filePaths[0];
 }));
+handle('sleep-music-netease',nativeSleep.openNetEaseMusic);
 handle('sleep-clock',nativeSleep.clock);
 handle('sleep-alarm-status',nativeSleep.alarmStatus);
 handle('sleep-alarm-add',nativeSleep.addAlarm);

@@ -19,12 +19,14 @@ import soilArt from './assets/camp/soil.png';
 import stoneArt from './assets/camp/path-stone.png';
 import { useWindowDrag } from './windowDrag';
 import { SourceDetails, coverageLabel } from './SourceDetails';
-import { unwrap, type Favorite, type Garden, type GardenAction } from './types';
+import { unwrap, type Favorite, type Garden, type GardenAction, type PlantVariety } from './types';
 import './camp.css';
 import {TeachingJournal} from './TeachingPanel';
 
 const bridge = window.kanshan;
 const STAGES = { planted: '已播种', sprout: '幼苗', growing: '生长中', flower: '已开花' };
+const ALBUM = [['sunflower','向日葵','为什么向阳'],['tulip','郁金香','郁见新知'],['bluebell','蓝铃花','铃听一下'],['lavender','薰衣草','薰薰然'],['strawberry','草莓','莓有标准答案'],['lettuce','生菜','卷出新知'],['carrot','胡萝卜','橘博士'],['daisy','雏菊','雏见新知'],['pumpkin','南瓜','瓜分好奇心']] as const;
+const VARIETIES = Object.keys(plantVarieties) as PlantVariety[];
 const SLOTS = Array.from({ length: 9 }, (_, index) => {
   const column = index % 3;
   const row = Math.floor(index / 3);
@@ -47,7 +49,7 @@ function PropArt({ src }: { src: string }) {
 }
 
 type Tool = 'hand' | 'water' | 'fertilize' | 'harvest';
-type Sheet = 'seed' | 'plot' | 'journal' | null;
+type Sheet = 'seed' | 'plot' | 'journal' | 'album' | null;
 type Props = {
   snow: boolean; snowSaving:boolean; onSnow:()=>void;
   garden: Garden; hasClues: boolean; ready: boolean; action: string; reason: string; quiet: boolean; blocked: boolean;
@@ -100,6 +102,7 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
   const [tool, setTool] = useState<Tool>('hand');
   const [slot, setSlot] = useState<number | null>(null);
   const [seedId, setSeedId] = useState<string | null>(null);
+  const [selectedVariety, setSelectedVariety] = useState<PlantVariety>('sunflower');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [celebrating,setCelebrating]=useState(false);
@@ -111,7 +114,9 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
   current.current = { garden, onGarden, onActivity };
   const effectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seeds = garden.favorites.filter(favorite => favorite.slot === null);
-  const seed = seeds.find(favorite => favorite.id === seedId);
+  const availableVarieties = VARIETIES;
+  const plantingVariety = selectedVariety;
+  const seed = seeds.find(favorite => favorite.id === seedId) ?? seeds[0];
   const plant = garden.plants.find(item => item.slot === slot);
   const plots = SLOTS.map(plot => ({ ...plot, item: garden.plants.find(candidate => candidate.slot === plot.index) }));
   const selectedPlot = slot === null ? undefined : SLOTS[slot];
@@ -168,6 +173,7 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
 
   function openSeeds() {
     clearFeedback();
+    setSeedId(garden.favorites.find(favorite=>favorite.slot===null)?.id??null);
     setSheet('seed');
     setTool('hand');
     onActivity('seed-select');
@@ -195,6 +201,8 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
       onActivity(payload.action === 'harvest' ? 'keep' : payload.action);
       if (payload.action === 'plant') {
         setSeedId(null);
+        setSlot(target);
+        setSheet('plot');
         setNotice('种子已播下。拿起水壶或肥料，再点这块田。');
         setCelebrating(value.plants.some(item=>item.slot===target&&item.favoriteId===payload.favoriteId));
       } else if (payload.action === 'harvest') {
@@ -326,6 +334,7 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
               <path className="camp-soil" d={SOIL} transform="scale(.92)" fill="transparent"/>
               <path d={SOIL} transform="scale(.92)" className="camp-outline"/>
               {item && <Plant stage={item.stage} variety={item.variety}/>}
+              {item?.stage === 'flower' && <g className="camp-harvest-cue" aria-hidden="true"><rect x="-17" y="-83" width="34" height="17" rx="8.5"/><text x="0" y="-71" textAnchor="middle">可摘</text></g>}
               {preview && <ellipse className="camp-seed-preview" cx="0" cy="-3" rx="6" ry="3.6" fill="#fbedaf" stroke="#765c38"/>}
               {item?.wateredAt && <path className="camp-water-mark" d="M23 17c7 9 4 10 0 10s-7-1 0-10" fill="#9ed9e6" stroke="#4c8792" strokeWidth=".7"/>}
               {item?.fertilizedAt && <path className="camp-fertilizer-mark" d="m-26 18 3 3-3 3-3-3zm-6 3 2 2-2 2-2-2z" fill="#f2d08a"/>}
@@ -354,7 +363,7 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
       {!layout.editing&&<button className="camp-layout-action" type="button" disabled={toolsLocked}
         onClick={()=>{close();layout.edit();}}>调整布局</button>}
       {layout.editing?<button className="camp-layout-action" type="button" onClick={layout.save}>固定位置</button>:<>
-      <button className="camp-journal" type="button" disabled={toolsLocked} onClick={() => {clearFeedback();setSheet('journal');}}>
+      <button className="camp-journal" type="button" disabled={toolsLocked} onClick={() => {clearFeedback();setSheet('album');}}>植物图册 · {(garden.collected||[]).length}/9</button><button className="camp-journal" type="button" disabled={toolsLocked} onClick={() => {clearFeedback();setSheet('journal');}}>
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M10 5.2c-2-1.6-4.5-2-7-1.4v10.7c2.5-.5 5-.1 7 1.5 2-1.6 4.5-2 7-1.5V3.8c-2.5-.6-5-.2-7 1.4v10.6"/>
         </svg>收藏手账
@@ -367,24 +376,20 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
       <div className="camp-tools" aria-label="田间工具"><button aria-label="查看地块" aria-pressed={tool === 'hand' && !seed} disabled={toolsLocked} onClick={() => pickTool('hand')}>查看</button><button aria-label="打开种子箱" disabled={toolsLocked} onClick={openSeeds}>种子</button>
         <button aria-label="选择浇水工具" aria-pressed={tool === 'water'} disabled={toolsLocked} onClick={() => pickTool('water')}>浇水</button><button aria-label="选择施肥工具" aria-pressed={tool === 'fertilize'} disabled={toolsLocked} onClick={() => pickTool('fertilize')}>施肥</button>
         <button aria-label="选择采种手套" aria-pressed={tool === 'harvest'} disabled={toolsLocked} onClick={() => pickTool('harvest')}>采种</button></div></div>}
-    {sheet === 'seed' && <CampSheet title="选择一颗种子" detail="种子箱" side="left" onClose={close} busy={busy}>
+    {sheet === 'seed' && <CampSheet title="怎么播种" detail="先在好奇心山洞收藏发现，获得种子后选择植物" side="left" onClose={close} busy={busy}>
       <FeatureGuide feature="seeds"/>
-      {seeds.length ? <div className="seed-list">{seeds.map(favorite => <button key={favorite.id} disabled={busy || !ready || garden.plants.length >= 9} onClick={() => {
-        setSeedId(favorite.id);
-        setTool('hand');
-        setSheet(null);
-        if (slot !== null && !garden.plants.some(item => item.slot === slot)) setSheet('plot');
-        onActivity('seed-select');
-      }}><span>{title(favorite)}</span><small>{sourceLabel(favorite)}</small></button>)}</div> :
-        <><p>去山洞收藏一个发现，再回来播种。</p><button onClick={() => openExternal(onCave)}>去山洞探索</button></>}
+      {seeds.length ? <p>已获得 {seeds.length} 颗种子。选择一种植物后点击播种。</p> :
+        <><p>先去山洞收藏一个发现，获得种子后才能选择植物。</p><button onClick={() => openExternal(onCave)}>去山洞探索</button></>}
+      {seed && garden.plants.length < 9 && <label className="seed-variety-picker">选择要播的植物<select value={plantingVariety} onChange={event=>setSelectedVariety(event.target.value as PlantVariety)}>{VARIETIES.map(variety=><option key={variety} value={variety}>{plantVarieties[variety]}</option>)}</select></label>}
+      {seed && garden.plants.length < 9 && <button className="primary" disabled={busy||!ready} onClick={()=>{const target=SLOTS.find(plot=>!garden.plants.some(item=>item.slot===plot.index));if(target)void perform({action:'plant',favoriteId:seed.id,slot:target.index,variety:plantingVariety},target.index);}}>播种{plantVarieties[plantingVariety]}</button>}
       {garden.plants.length >= 9 && <p>九块田都已种满，种子继续留在这里。</p>}{feedback}
     </CampSheet>}
     {sheet === 'plot' && selectedPlot && <CampSheet title={plotHeading} detail="九田花园" onClose={close} busy={busy}
       footer={isPreview ? <><button onClick={() => {setSeedId(null);clearFeedback();}} disabled={busy}>取消预览</button>
-        <button className="primary" disabled={busy || !ready} onClick={() => seed && void perform({action:'plant',favoriteId:seed.id,slot:selectedPlot.index},selectedPlot.index)}>确认播种</button></> : undefined}>
+        <button className="primary" disabled={busy || !ready || !availableVarieties.includes(selectedVariety)} onClick={() => seed && void perform({action:'plant',favoriteId:seed.id,slot:selectedPlot.index,variety:selectedVariety},selectedPlot.index)}>确认播种</button></> : undefined}>
       {plant&&<FeatureGuide feature="plot"/>}
-      {isPreview && seed ? <p>将「{title(seed)}」种在这里。确认后才会使用种子。</p> : plant ?
-        <><strong>{title(garden.favorites.find(favorite => favorite.id === plant.favoriteId)!)}</strong>
+      {isPreview && seed ? <><p>将「{title(seed)}」种在这里。确认后才会使用种子。</p><label className="seed-variety-picker">选择植物品种<select value={selectedVariety} onChange={event=>setSelectedVariety(event.target.value as PlantVariety)}>{availableVarieties.map(variety=><option key={variety} value={variety}>{plantVarieties[variety]}</option>)}</select></label></> : plant ?
+        <><strong>{plant.favoriteId?title(garden.favorites.find(favorite => favorite.id === plant.favoriteId)!):plantVarieties[plant.variety]}</strong>
           <p className="camp-plant-variety">品种 · {plantVarieties[plant.variety]}</p>
           <div className="camp-meters">
             <label>水分 <meter min="0" max="100" value={plant.water}/><span>{Math.round(plant.water)}%</span></label>
@@ -393,6 +398,9 @@ export function GardenPanel({ snow, snowSaving, onSnow, garden, hasClues, ready,
           </div><p>{plant.wateredAt && plant.fertilizedAt ? '照料已完成，可以慢慢生长。' : '亲手浇水、施肥后开始成长。'}</p>
           <button disabled={busy} onClick={() => setSheet('journal')}>去手账看来源</button></> :
         <><p>这块田空着。选一颗种子，再确认播种。</p><button disabled={busy} onClick={openSeeds}>打开种子箱</button></>}{feedback}
+    </CampSheet>}
+    {sheet === 'album' && <CampSheet title="植物图册" detail="采摘植物，逐一收集" side="reading" onClose={close} busy={busy}>
+      <div className="plant-album">{ALBUM.map(([id,name,nickname])=>{const lit=(garden.collected||[]).includes(id as any);return <article className={`plant-album-card ${lit?'is-lit':'is-locked'}`} key={id}><span className="plant-album-mark" aria-hidden="true">{lit?<svg viewBox="-40 -75 80 82"><Plant stage="flower" variety={id}/></svg>:'？'}</span><strong>{lit?name:'未发现'}</strong><small>{lit?nickname:'成熟后点击采摘'}</small></article>;})}</div>
     </CampSheet>}
     {sheet === 'journal' && <CampSheet title="收藏手账" side="reading" onClose={close} busy={busy}>
       <FeatureGuide feature="journal"/>
