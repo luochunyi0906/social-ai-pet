@@ -2,18 +2,24 @@ import { useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 
 type Offset = { x: number; y: number };
 type Positions = Record<string, Offset>;
-const storageKey = 'kanshan:camp-layout:v1';
+const storageKey = 'kanshan:camp-layout:v2';
+const legacyStorageKey = 'kanshan:camp-layout:v1';
 const zero = { x: 0, y: 0 };
 
 function readPositions(): Positions {
   try {
-    const value = JSON.parse(localStorage.getItem(storageKey) ?? '{}');
-    return Object.fromEntries(Object.entries(value).filter(([key, offset]) => {
+    const saved = localStorage.getItem(storageKey);
+    const value = JSON.parse(saved ?? localStorage.getItem(legacyStorageKey) ?? '{}');
+    const positions = Object.fromEntries(Object.entries(value).filter(([key, offset]) => {
       const point = offset as Offset | null;
       return /^(farm|cave|cabin|seed|water|fertilizer|glove|fox|bench|mail)(-label)?$|^stone-\d+(?:\.\d+)?$/.test(key) &&
         point && Number.isFinite(point.x) && Number.isFinite(point.y) &&
         Math.abs(point.x) <= 1800 && Math.abs(point.y) <= 1480;
     })) as Positions;
+    if (saved !== null) return positions;
+    const { cave, 'cave-label': _caveLabel, bench: _bench, 'bench-label': _benchLabel, ...remaining } = positions;
+    // The new bench uses the former cave's location in existing camps.
+    return cave ? { ...remaining, bench: cave } : remaining;
   } catch {
     return {};
   }

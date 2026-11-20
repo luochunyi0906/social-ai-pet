@@ -75,7 +75,11 @@ try{
  };
  const openChat=()=>button('和刘看山互动，可双击打开聊天').dblclick();
  const openSearch=async()=>{
-  await page.locator('.camp-cave').click();
+  await app.evaluate(({ Menu, BrowserWindow }) => {
+   const actions = Menu.getApplicationMenu().items.find(item => item.label === '看山有伴').submenu.items.find(item => item.label === '操作菜单');
+   const cave = actions.submenu.items.find(item => item.label === '打开山洞');
+   cave.click(cave, BrowserWindow.getAllWindows()[0]);
+  });
   await waitSprite('emo_curious','enter');
   await button('主动检索知乎').click();
   await page.getByRole('textbox',{name:'本次关键词'}).fill(real?'香港城市大学':'雪地观察');

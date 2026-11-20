@@ -15,13 +15,13 @@ import './desktop-pet.css';
 export {DEFAULT_PLACES} from './shared/layout.mjs';
 
 const bridge=window.kanshan;
-const propLabels = {
- garden:{ title:'好奇心花园', label:'打开好奇心花园，可拖动花箱' },
- cave:{ title:'好奇心山洞', label:'打开山洞，可拖动山洞' },
- feed:{ title:'投喂线索', label:'投喂文字或文件，可拖动投喂箱' }
-} as const;
+const desktopProps = {
+ garden:{name:'好奇心花园',label:'打开好奇心花园，可拖动花箱'},
+ cave:{name:'好奇心山洞',label:'进入秘密基地，可拖动山洞'},
+ feed:{name:'投喂线索',label:'投喂文字或文件，可拖动投喂箱'}
+};
 type PlaceKey=keyof typeof PIECES;
-type PropKey=keyof typeof propLabels;
+type PropKey=keyof typeof desktopProps;
 type Point={x:number;y:number};
 type Places=Record<string,Point>;
 type Drag={key:PropKey;pointer:number;start:Point;origin:Point;moved:boolean;blocked:boolean};
@@ -104,12 +104,13 @@ export function DesktopPet({action,reason,onOpen,onInteraction,paused,quiet,slee
  }
 
  function prop(key:PropKey){
-  const art=snowyArt[key],labels=propLabels[key],size=PIECES[key];
-  return <button type="button" className={`pet-piece pet-object pet-${key}`} data-hit aria-label={labels.label} style={spot(key)}
+  const art=snowyArt[key];
+  const {name,label}=desktopProps[key];
+  return <button type="button" className={`pet-piece pet-object pet-${key}`} data-hit aria-label={label} style={spot(key)}
    onPointerDown={event=>down(event,key)} onPointerMove={move} onPointerUp={up} onPointerCancel={endPropDrag}
    onLostPointerCapture={endPropDrag} onPointerEnter={key==='garden'?()=>onInteraction('gardenlook'):undefined} onClick={event=>{
     if(suppress.current&&event.detail!==0){suppress.current=false;return;}
-    onOpen(key);
+    onOpen(key==='cave'?'lounge':key);
    }}>
    <span className="pet-contact" aria-hidden="true"/>
    <span className="pet-art" aria-hidden="true">
@@ -117,7 +118,7 @@ export function DesktopPet({action,reason,onOpen,onInteraction,paused,quiet,slee
     {key==='cave'&&<span className="pet-lantern"/>}
    </span>
    <svg className="pet-hit" viewBox={art.viewBox} aria-hidden="true"><path d={art.path}/></svg>
-   <Caption title={labels.title} location={size.label}/>
+   <Caption title={name} location={PIECES[key].label}/>
   </button>;
  }
 

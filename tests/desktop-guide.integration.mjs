@@ -86,6 +86,15 @@ try {
   page = await launch();
   await pet().waitFor();
   assert.equal(await page.locator('.first-run-guide').count(), 0);
+  assert.deepEqual(await page.locator('.pet-object .pet-caption:visible').allTextContents(), ['好奇心花园', '好奇心山洞', '投喂线索']);
+  await page.locator('.pet-garden .pet-caption').click();
+  await page.locator('.camp-plot').first().waitFor();
+  await page.keyboard.press('Escape');
+  await pet().waitFor();
+  await page.locator('.pet-feed .pet-caption').click();
+  await page.locator('.feed-modal').waitFor();
+  await page.keyboard.press('Escape');
+  await pet().waitFor();
   const savedModel = await page.evaluate(() => window.kanshan.status());
   assert.equal(savedModel.data.destination, 'fixture.example');
   assert.equal(savedModel.data.model, 'fixture-model');
@@ -100,6 +109,7 @@ try {
   await pet().waitFor();
   assert.equal(await page.locator('.camp-shell, .chat-modal, .cave-entrance').count(), 0);
   await page.locator('.pet-cave .pet-caption').click();
+  await page.getByRole('region',{name:'秘密基地',exact:true}).getByRole('button',{name:'探索桌',exact:true}).click();
   await button('山洞入口').waitFor();
   assert.equal(await page.locator('.cave-reveal video').count(), 0);
   await button('山洞入口').click();
@@ -114,11 +124,18 @@ try {
   await campActor.click();
   await page.waitForTimeout(1650);
   assert.equal(await page.locator('.chat-modal, .cave-entrance').count(), 0);
-  await button('休息处，和刘看山聊聊').click();
+  const campBench = button('坐一会儿');
+  const seatedMap = page.locator('.camp-map[data-bench-seated="true"]');
+  await campBench.getByText('坐一会儿').click();
+  await seatedMap.waitFor();
+  assert.equal(await page.locator('.chat-modal').count(), 0);
+  await campBench.press('Enter');
+  await seatedMap.waitFor({ state: 'detached' });
+  await campActor.dblclick();
   await page.locator('.chat-modal').getByText(/fixture-model · fixture.example/).waitFor({state:'attached'});
   await page.keyboard.press('Escape');
   await pet().waitFor();
-  console.log('PASS 单击桌宠和营地角色只触发互动，山洞与彩蛋各走独立入口');
+  console.log('PASS 单击角色互动，双击营地角色聊天，长椅落座，山洞与彩蛋各走独立入口');
   await app.evaluate(({ Menu, BrowserWindow }) => {
     const window = BrowserWindow.getAllWindows()[0];
     const appMenu = Menu.getApplicationMenu().items.find(item => item.label === '看山有伴');

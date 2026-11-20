@@ -151,7 +151,9 @@ export async function run() {
         ['花箱',await pointFor('.pet-garden .pet-hit path'),front],
         ['石洞',await pointFor('.pet-cave .pet-hit path'),front],
         ['信箱',await pointFor('.pet-feed .pet-hit path'),front],
-        ['木牌',await pointFor('.pet-garden .pet-caption'),front]
+        ['花园标签',await pointFor('.pet-garden .pet-caption'),front],
+        ['山洞标签',await pointFor('.pet-cave .pet-caption'),front],
+        ['投喂标签',await pointFor('.pet-feed .pet-caption'),front]
       ];
       for(const [name,point,expected] of checks){
         await pointer('warp',r.x+point.x,r.y+point.y);
@@ -179,13 +181,13 @@ export async function run() {
       return {x,y,rect,original};
     });
     const themes=[
-      ['light','#eee7d8','.pet-garden','好奇心花园'],
-      ['dark','#202a2e','.pet-cave','好奇心山洞'],
-      ['photo','photo','.pet-feed','投喂线索']
+      ['light','#eee7d8','.pet-garden'],
+      ['dark','#202a2e','.pet-cave'],
+      ['photo','photo','.pet-feed']
     ];
     const output=[];
     try{
-      for(const [theme,style,selector,full] of themes){
+      for(const [theme,style,selector] of themes){
         await app.evaluate(async ({nativeImage},style)=>{
           let background=style;
           if(style==='photo'){
@@ -201,7 +203,7 @@ export async function run() {
         await pointer('warp',frame.x+5,frame.y+5);
         await page.mouse.move(5,5);
         await page.waitForTimeout(200);
-        assert.deepEqual(await page.locator('.pet-object .pet-caption:visible').allTextContents(),['好奇心花园','好奇心山洞','投喂线索']);
+        assert.equal(await page.locator('.pet-object .pet-caption:visible').count(),3);
         assert.equal(await page.locator('.pet-caption-context:visible').count(),0);
         const {rect}=frame;
         async function capture(state){
@@ -215,9 +217,7 @@ export async function run() {
         const box=await hit.boundingBox();
         await pointer('warp',Math.round(frame.x+box.x+box.width/2),Math.round(frame.y+box.y+box.height/2));
         await hit.hover();
-        const label=page.locator(selector+' .pet-caption');
-        await label.waitFor();
-        assert.equal(await label.textContent(),full);
+        assert.equal(await page.locator(selector+' .pet-caption:visible').count(),1);
         await page.waitForTimeout(210);
         await capture('hover');
       }
@@ -239,8 +239,12 @@ export async function run() {
       const prop=page.locator('.pet-'+key+' .pet-hit path');
       await prop.click();
       if(key==='cave'){
+        const lounge=page.getByRole('region',{name:'秘密基地',exact:true});
+        await lounge.waitFor();
+        assert.equal(await page.getByRole('region',{name:'山洞探索桌',exact:true}).count(),0);
         assert.equal(await page.locator('.cave-reveal').count(),0);
-        await prop.click();
+        await lounge.getByRole('button',{name:'探索桌',exact:true}).click();
+        await button('山洞入口').click();
         const secret=page.getByRole('dialog',{name:'山洞换装间'});
         await secret.getByRole('button',{name:'离开',exact:true}).click();
       }
@@ -266,7 +270,7 @@ export async function run() {
     assert.ok(menu.includes('模型与检索设置'));
     assert.ok(menu.includes('去窗口边上玩'));
     await app.evaluate(()=>globalThis.woodlandMenu.instance.closePopup());
-    return ['花箱打开九田','洞口点击两次播放彩蛋并回到探索桌','信箱打开投喂窗口','右键刘看山打开原生菜单'];
+    return ['花箱打开九田','桌面山洞直进秘密基地，从探索桌播放彩蛋','信箱打开投喂窗口','右键刘看山打开原生菜单'];
   }
   const closeSheet = (label) => button('关闭'+label).click();
   const clickPlot = (slot) => page.locator('.camp-plot').filter({has:page.locator('text',{hasText:slot})}).locator('.camp-soil').click();
@@ -304,7 +308,7 @@ export async function run() {
       assert.ok(source.includes(`/assets/${asset}-`)&&source.endsWith('.png'),source);
     }
     mark('透明小窗在三种壁纸上的默认、悬停与键盘聚焦',await captureWallpapers());
-    mark('雪地台支持原生拖动，透明空白穿透，三道具及木牌命中桌宠',await verifyDecorationRouting());
+    mark('雪地台支持原生拖动，透明空白穿透，三件道具命中桌宠',await verifyDecorationRouting());
     mark('三个道具入口和角色右键菜单进入对应原生功能',await checkDesktopEntries());
 
     const desk=await area();
@@ -330,7 +334,7 @@ export async function run() {
     assert.equal(await page.locator('.camp-plot').count(),9);
     assert.equal(await page.evaluate(() => location.protocol),'file:');
     const art = await page.evaluate(async () => {
-      const selectors = ['.camp-terrain','.camp-cave img'];
+      const selectors = ['.camp-terrain','.camp-bench img'];
       return Promise.all(selectors.map(async selector => {
         const style = getComputedStyle(document.querySelector(selector)).backgroundImage;
         const image = new Image();
@@ -339,7 +343,7 @@ export async function run() {
         return [image.naturalWidth,image.naturalHeight];
       }));
     });
-    assert.deepEqual(art,[[1382,1138],[496,410]]);
+    assert.deepEqual(art,[[1383,1137],[400,507]]);
     assert.deepEqual(await Promise.all(['far','mid','near'].map(depth=>page.locator(`.camp-snow .snowfall-${depth} i`).count())),[25,20,9]);
     assert.equal(await page.locator('.camp-snow .snowfall-crystal').count(),3);
     const flakes = () => page.locator('.camp-snow i').first().evaluate(el=>({transform:getComputedStyle(el).transform,events:getComputedStyle(el).pointerEvents}));
@@ -376,18 +380,12 @@ export async function run() {
     for (const [width,height] of [[900,740],[720,620],[600,620]]) {
       await app.evaluate(({BrowserWindow},size)=>BrowserWindow.fromId(1).setSize(...size),[width,height]);
       await page.waitForFunction(([width,height])=>innerWidth===width&&innerHeight===height,[width,height]);
-      for (const name of ['cave','mail','seed','water','fertilizer','journal','fox','bench']) await hit('.camp-'+name);
-      const cave = await page.locator('.camp-cave').boundingBox();
-      const seeds = await page.locator('.camp-seed').boundingBox();
-      const fox = await page.locator('.camp-fox').boundingBox();
-      assert.ok(cave.x >= 0 && cave.x + cave.width + 10 <= seeds.x);
-      assert.ok(cave.y + cave.height < fox.y);
-      await page.locator('.camp-cave span').click();
-      await page.getByRole('region',{name:'山洞探索桌'}).waitFor();
-      await closeSheet('山洞探索桌');
+      for (const name of ['mail','seed','water','fertilizer','journal','fox']) await hit('.camp-'+name);
+      await hit('.camp-bench > span', '.camp-bench');
+      assert.equal(await page.locator('.camp-cave').count(), 0);
       await page.locator('.camp-seed span').click();
-      await page.getByRole('region',{name:'选择一颗种子'}).waitFor();
-      await closeSheet('选择一颗种子');
+      await page.getByRole('region',{name:'怎么播种',exact:true}).waitFor();
+      await closeSheet('怎么播种');
       await button('收藏手账').click();
       await page.getByRole('region',{name:'收藏手账'}).waitFor();
       await button('关闭收藏手账').click();
@@ -401,8 +399,7 @@ export async function run() {
           {x:box.x+box.width/2,y:box.y+box.height/2}),true);
       }
       await page.screenshot({path:join(artifacts,`native-camp-${width}x${height}.png`)});
-      mark(`${width} × ${height} 下山洞和种子箱分别可打开，主要道具和九块田可点击`,
-        {caveWidth:cave.width,seedGap:seeds.x-cave.x-cave.width});
+      mark(`${width} × ${height} 下种子箱可打开，长椅、主要道具和九块田可点击`);
     }
 
     const beforeUsingControls=(await windowState()).bounds;
@@ -456,21 +453,16 @@ export async function run() {
     mark('逐次授权、知乎索引与离线回放清楚分开，收藏去重并发种', '网络检索响应为夹具');
     await closeSheet('山洞探索桌');
 
-    await button('种子箱 · 1').click();
-    await page.locator('.camp-sheet .seed-list button').click();
     await clickPlot('A1');
     // 旧版迁移的开花植物占用 A1，保留原槽位。
     await assertVisible('.camp-sheet','A1 · 已开花');
-    await clickPlot('A2');
-    await assertVisible('.camp-sheet','A2 · 播种预览');
-    assert.equal((await state()).plants.length,1);
-    await button('取消预览').click();
-    assert.equal((await state()).plants.length,1);
     await button('种子箱 · 1').click();
-    await page.locator('.camp-sheet .seed-list button').click();
-    await assertVisible('.camp-sheet','A2 · 播种预览');
-    await button('确认播种').click();
+    const picker = page.getByRole('combobox',{name:'选择要播的植物'});
+    await picker.selectOption('tulip');
+    assert.equal((await state()).plants.length,1);
+    await button('播种郁金香').click();
     await assertVisible('.camp-sheet','A2 · 已播种');
+    assert.equal((await state()).plants.find(plant=>plant.slot===1).variety,'tulip');
     await button('拿起水壶').click();
     await clickPlot('A2');
     await assertVisible('.camp-sheet','水已经浇进土里了');
@@ -489,7 +481,7 @@ export async function run() {
     await button('回到这块田 · A2').click();
     await assertVisible('.camp-sheet','A2 · 幼苗');
     await page.screenshot({path:join(artifacts,'native-camp-after-care.png')});
-    mark('选种、取消、确认、选择工具点田、空田反馈及手账返回');
+    mark('选择品种并播种到首块空田、选择工具点田、空田反馈及手账返回');
     await button('和刘看山互动，可双击打开聊天').dblclick();
     await page.locator('.chat-modal textarea').fill('你好，营地');
     await page.locator('.chat-modal .consent input').check();

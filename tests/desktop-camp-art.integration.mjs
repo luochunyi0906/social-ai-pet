@@ -79,12 +79,8 @@ try {
         const { x, y, width, height } = element.getBoundingClientRect();
         const hit = document.elementFromPoint(x + width / 2, y + height / 2);
         const owner = element.closest('button,[role=button]');
-        // The cave artwork is anchored to the left edge. Its entrance and
-        // label must remain usable even when the outer rocks extend past it.
-        const caveArt = element instanceof HTMLImageElement && owner?.classList.contains('camp-cave');
-        const left = caveArt ? x >= -width * .22 : x >= 0;
         return { owner: owner?.getAttribute('aria-label') || owner?.textContent,
-          view: left && y >= 0 && x + width <= innerWidth && y + height <= innerHeight && width > 0 && height > 0,
+          view: x >= 0 && y >= 0 && x + width <= innerWidth && y + height <= innerHeight && width > 0 && height > 0,
           hit: hit?.closest('button,[role=button]') === owner };
       });
     });
@@ -103,16 +99,19 @@ try {
   const originalVarieties = await varieties.evaluateAll(elements => elements.map(element => element.dataset.plantVariety));
   assert.equal(new Set(originalVarieties).size, 8);
 
-  const bench = button('休息处，和刘看山聊聊');
+  const bench = button('坐一会儿');
   const fox = button('和刘看山互动，可双击打开聊天');
   const [a, b] = await Promise.all([bench.boundingBox(), fox.boundingBox()]);
   assert.ok(a && b);
   await take('kanshan-camp-bench', { x: Math.max(0, a.x - 14), y: Math.min(a.y, b.y) - 18,
     width: Math.max(a.x + a.width, b.x + b.width) + 8 - Math.max(0, a.x - 14),
     height: Math.max(a.y + a.height, b.y + b.height) - Math.min(a.y, b.y) + 34 });
-  await bench.click();
-  await page.locator('.chat-modal').waitFor();
-  await button('关闭对话').click();
+  await bench.getByText('坐一会儿').click();
+  const seatedMap = page.locator('.camp-map[data-bench-seated="true"]');
+  await seatedMap.waitFor();
+  assert.equal(await page.locator('.chat-modal').count(), 0);
+  await bench.press('Space');
+  await seatedMap.waitFor({ state: 'detached' });
   await fox.dblclick();
   await page.locator('.chat-modal').waitFor();
   await button('关闭对话').click();
@@ -132,16 +131,17 @@ try {
   await button('关闭B2 · 已开花').click();
 
   await button('种子箱 · 1').click();
-  await button('营地验收待播种种子 本地模拟问题').click();
-  await plot('C3').locator('.camp-soil').click();
-  await plot('C3').locator('.camp-seed-preview').waitFor();
+  const picker = page.getByRole('combobox', { name: '选择要播的植物' });
+  assert.deepEqual(await picker.locator('option').evaluateAll(options => options.map(option => option.value)), assets);
+  await picker.selectOption('lavender');
   assert.equal((await save()).plants.length, 8);
   assert.equal(await page.locator('.camp-plant-sticker').count(),0);
-  await button('确认播种').click();
+  await button('播种薰衣草').click();
   await plot('C3').locator('.plant-planted').waitFor();
   assert.equal(await page.locator('.camp-plant-sticker [data-sticker-id="scarf_celebrate"]').count(),1);
   assert.equal(await page.locator('.chat-modal').count(),0);
   assert.equal((await save()).plants.length, 9);
+  assert.equal((await save()).plants.find(plant => plant.slot === 8).variety, 'lavender');
   assert.deepEqual(new Set(await varieties.evaluateAll(elements => elements.map(element => element.dataset.plantVariety))),new Set(assets));
   const finalSave = await save();
   assert.deepEqual(finalSave.plants.slice(0,8).map(plant => plant.variety),originalVarieties);
@@ -179,6 +179,12 @@ try {
   assert.deepEqual(new Set(matureAssets),new Set(assets));
   await button('关闭C2 · 已开花').click();
   await take('kanshan-camp-nine-crops');
+  await button('拿起采种手套').click();
+  await plot('C3').locator('.camp-soil').click();
+  await button('植物图册 · 1/9').click();
+  const album = page.getByRole('region', { name: '植物图册' });
+  await album.locator('.plant-album-card.is-lit').getByText('薰衣草', { exact: true }).waitFor();
+  assert.equal((await save()).favorites.find(favorite => favorite.title === '营地验收待播种种子').slot, null);
   await button('收回桌面').click();
   await page.locator('.desktop-pet').waitFor();
   await page.waitForFunction(({width,height}) => innerWidth === width && innerHeight === height, DESKTOP_SIZE);

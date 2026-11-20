@@ -71,8 +71,9 @@ try {
  assert.equal(await page.getByRole('region', { name: '山洞解锁服装' }).count(), 0);
  assert.equal((await page.evaluate(() => window.kanshan.saveCaveOutfit('han'))).ok, false);
  await button('收回桌面').click();
- const entrance = page.locator('.pet-cave .pet-caption');
+ const entrance = page.locator('.pet-cave .pet-hit path');
  await entrance.click();
+ await page.getByRole('region',{name:'秘密基地',exact:true}).getByRole('button',{name:'探索桌',exact:true}).click();
  await page.getByRole('button',{name:'山洞入口',exact:true}).click();
  await page.waitForFunction(() => document.querySelector('.cave-reveal video')?.currentTime > 3);
  await button('离开').click();
