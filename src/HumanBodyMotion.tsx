@@ -11,9 +11,9 @@ const frontFar='M648 490Q687 482 722 550L777 788 753 896 712 959 654 951 638 914
 const pixel=185/1024*92/240;
 const toUnits=(value:number)=>value/pixel;
 
-export function HumanBodyMotion({src,pose,look,view,animate,since,speed,release,frozen}:{
+export function HumanBodyMotion({src,pose,look,view,animate,since,speed,release,frozen,fit}:{
  src:string;pose:Exclude<CostumePose,'stand'>;look:HumanWeather;view:HumanView;animate:boolean;since?:number;speed?:number;
- release?:WindowRelease;frozen?:boolean;
+ release?:WindowRelease;frozen?:boolean;fit?:string;
 }){
  const id=useId();
  const live=useMotionTime(animate,since);
@@ -101,7 +101,7 @@ export function HumanBodyMotion({src,pose,look,view,animate,since,speed,release,
    <g transform={link(elbow,wrist,solved.middle,solved.end)}>{image(part,'forearm')}</g>
   </g>;
  }
- return <svg className="human-body-motion costume-rig" data-rig-pose={pose} data-limb-view={view}
+ return <svg className="human-body-motion costume-rig" transform={fit} data-rig-pose={pose} data-limb-view={view}
   x={27} y={13} width={185} height={277} viewBox="0 0 1024 1536" overflow="visible" pointerEvents="none" aria-hidden="true">
   <defs>
    {Object.entries(parts).map(([name,d])=><clipPath key={name} id={sample(name)}><path d={d}/></clipPath>)}

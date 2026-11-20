@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {roaming} from '../desktop/roaming.cjs';
 import {DEFAULT_PLACES} from '../src/shared/layout.mjs';
+import layout from '../desktop/pet-layout.json' with {type:'json'};
+const {artX,artY,width:roamWidth,height:roamHeight}=layout.roam.standard;
 
 test('全桌面选点可跨逻辑显示器，巡游和归位时窗口保持可见',({mock})=>{
  mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:0});
@@ -27,7 +29,7 @@ test('全桌面选点可跨逻辑显示器，巡游和归位时窗口保持可�
   assert.ok(bounds.x>=displays[1].x);
   for(let i=0;i<1500&&pet.away;i++)mock.timers.tick(16);
   assert.equal(pet.away,false);
-  assert.deepEqual({x:bounds.x,y:bounds.y},origin);
+  assert.deepEqual({x:bounds.x+artX,y:bounds.y+artY},origin);
   assert.ok(visits.every(rect=>displays.some(screen=>rect.x>=screen.x&&rect.y>=screen.y&&
    rect.x+rect.width<=screen.x+screen.width&&rect.y+rect.height<=screen.y+screen.height)));
  }finally{pet.dispose();}
@@ -111,7 +113,7 @@ test('散步在实际边界内转向，停留后归位、冷却；前台、菜�
   assert.equal(view.motion,undefined);
   assert.equal(view.walkingGif,undefined);
   assert.ok(Math.hypot(point.x-anchor.x,point.y-anchor.y)>30);
-  assert.ok(positions.every(p=>p.x>=0&&p.x+92<=400&&p.y>=0&&p.y+135<=360));
+  assert.ok(positions.every(p=>p.x>=0&&p.x+roamWidth<=400&&p.y>=0&&p.y+roamHeight<=360));
 
   const stopped={...point};
   pet.setMenu(true);
@@ -150,7 +152,7 @@ test('散步在实际边界内转向，停留后归位、冷却；前台、菜�
   bounds={x:0,y:0,width:280,height:250};
   anchor.x=120;
   pet.reconcile();
-  assert.ok(point.x+92<=280&&point.y+135<=250);
+  assert.ok(point.x+roamWidth<=280&&point.y+roamHeight<=250);
  }finally{pet.dispose();}
 });
 

@@ -105,7 +105,7 @@
 @media (prefers-reduced-motion:reduce) {
  .pet-art,.pet-lantern {transition:none;}
 }
-.pet-fox>.fox-costume {filter:drop-shadow(0 1px 1px #253c2670)}
+.pet-fox>.fox-costume {filter:drop-shadow(0 1px 1px #19233835)}
 .pet-fox>.fox-costume image {pointer-events:none}
 .pet-fox>.fox-costume .fox-costume-hit {pointer-events:fill;cursor:grab}
 .pet-fox.is-dragging .fox-costume-hit {cursor:grabbing}

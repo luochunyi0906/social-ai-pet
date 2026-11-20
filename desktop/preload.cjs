@@ -1,5 +1,11 @@
 const {contextBridge,ipcRenderer,webUtils}=require('electron');
 contextBridge.exposeInMainWorld('kanshan',{
+ minesStatus:()=>ipcRenderer.invoke('mines-status'),
+ minesEnable:value=>ipcRenderer.invoke('mines-enable',value),minesMute:()=>ipcRenderer.invoke('mines-mute'),
+ minesAdvice:level=>ipcRenderer.invoke('mines-advice',level),minesExplain:payload=>ipcRenderer.invoke('mines-explain',payload),
+ minesFrame:()=>ipcRenderer.invoke('mines-frame'),minesCalibrate:rect=>ipcRenderer.invoke('mines-calibrate',rect),
+ minesPermission:()=>ipcRenderer.invoke('mines-permission'),
+ onMines:fn=>{const cb=(_event,state)=>fn(state);ipcRenderer.on('mines-state',cb);return()=>ipcRenderer.removeListener('mines-state',cb);},
  hotOpen:()=>ipcRenderer.invoke('hot-open'),hotRefresh:()=>ipcRenderer.invoke('hot-refresh'),
  hotRead:url=>ipcRenderer.invoke('hot-read',url),hotSettings:p=>ipcRenderer.invoke('hot-settings',p),
  hotTick:mode=>ipcRenderer.invoke('hot-tick',mode),

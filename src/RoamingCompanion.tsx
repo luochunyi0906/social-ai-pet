@@ -8,6 +8,7 @@ import {useCheekGesture} from './useCheekGesture';
 import {DesktopKnockArt,useDesktopKnock} from './DesktopKnock';
 import {useListening} from './useListening';
 import type {RoamView} from './types';
+import {roam} from '../desktop/pet-layout.json';
 
 const bridge=window.kanshan;
 const idle={outfitId:'default',sleeping:false,action:'observe'};
@@ -31,8 +32,10 @@ export function RoamingCompanion(){
   void bridge?.roamReady();
   return()=>{view?.();probe?.();};
  },[]);
+ const {artX,artY}=view.foxLift?roam.foxLift:view.appearance==='fox'?roam.fox:roam.standard;
  return <CompanionProvider appearance={view.appearance} outfit={findOutfit(view.outfitId)} sleeping={view.sleeping} action={view.action} enabled cue={cue} motion={view.motion} motionEnabled={view.motionEnabled} daydream={view.daydream&&!dragging} weather={view.weather} caveOutfit={view.caveOutfit} humanWeather={view.humanWeather} weatherUnlocked={view.weatherUnlocked} windowPose={view.windowPose} stillIdle onError={ignore}>
-  <button ref={gaze} type="button" className={`roam-character pet-piece pet-fox ${view.appearance==='fox'?'roam-fox-form':''} ${dragging?'is-dragging':''}`}
+  <button ref={gaze} type="button" className={`roam-character pet-piece pet-fox ${dragging?'is-dragging':''}`}
+   style={{left:artX,top:artY}} data-mines-pose={view.guestPose}
    aria-label={knock.active?'敲一下刘看山，双指双点或 Escape 退出':'和刘看山互动，可双击打开聊天'} aria-haspopup="menu" title="单击互动，双击打开聊天"
    onPointerDown={event=>{if(event.button===0&&event.isPrimary&&!event.ctrlKey)void bridge?.roamPress(true);if(!cheek.down(event))bindings.onPointerDown(event);}}
    onPointerMove={event=>{if(!cheek.move(event))bindings.onPointerMove(event);}}
@@ -43,7 +46,7 @@ export function RoamingCompanion(){
    onContextMenu={knock.contextMenu} data-knocking={knock.active||undefined} data-striking={knock.striking||undefined}
    onKeyDown={event=>{if(knock.active&&event.repeat&&(event.key===' '||event.key==='Enter'))event.preventDefault();else clicks.menuKey(event);}}
    onClick={event=>{if(event.ctrlKey||cheek.skipClick(event.detail)||didDrag(event.detail))return;if(knock.active)knock.hit();else clicks.pick(event.detail);}}>
-   <span className="pet-contact" aria-hidden="true"/><Companion action={view.action}
+   <span className="pet-contact" aria-hidden="true"/><Companion action={view.action} liftScale={view.foxLift?roam.foxLift.scale:1}
     cheek={cheek.pose} faceEnabled={interactive&&!knock.active} listening={interactive?listening:undefined}
     gesture={knock.striking?'knock':clicks.gesture??(view.action==='lift'||view.action==='land'?view.action:undefined)}/>
    <DesktopKnockArt {...knock}/>

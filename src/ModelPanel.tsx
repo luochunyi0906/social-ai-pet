@@ -2,6 +2,7 @@ import { ModelSettingsForm } from './ModelSettingsForm';
 import { FeatureGuide } from './FeatureGuide';
 import {MovementSettings} from './MovementSettings';
 import {WeatherControls} from './WeatherSettings';
+import {MinesSettings} from './MinesCompanion';
 import{useEffect,useRef,useState}from'react';
 import{unwrap,type ModelStatus,type ModelSettingsResult,type ChatStatus,type ConnectionCheck,type SearchStatus,type ZhihuQuota,type CompanionPrefs}from'./types';
 const bridge=window.kanshan;
@@ -46,7 +47,7 @@ export function ModelPanel({status,onStatus,onClose,onCompanionChange}:{status:M
  <ModelSettingsForm key={formRevision} busy={checking||quotaChecking||refreshing} onSaving={setSavingConfig} onSaved={applySaved}/>
  <FeatureGuide feature="settings"/>
  <p className="dialog-description">先确认服务地址与模型，再用一小段内置材料测试。你的文件和收藏不会用于此测试。</p>
- <MovementSettings/><WeatherControls/>
+ <MovementSettings/><WeatherControls/><MinesSettings/>
  {companion&&<section className="setup-guide companion-settings" aria-label="主动聊天设置">
   <label><input type="checkbox" checked={companion.enabled} disabled={companionSaving}
    onChange={event=>void saveCompanion({...companion,enabled:event.target.checked})}/> 刘看山可以主动找我聊天</label>

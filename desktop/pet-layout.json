@@ -1,5 +1,10 @@
 {
   "size": {"width": 304, "height": 176},
+  "roam": {
+    "standard": {"width": 116, "height": 153, "artX": 12, "artY": 8},
+    "fox": {"width": 154, "height": 157, "artX": 31, "artY": 10},
+    "foxLift": {"width": 244, "height": 248, "artX": 76, "artY": 46, "scale": 1.5, "settleMs": 360}
+  },
   "places": {
     "fox": {"x": 106, "y": 4},
     "garden": {"x": 210, "y": 34},

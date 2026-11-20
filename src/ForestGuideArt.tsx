@@ -15,6 +15,8 @@ import frontLeft from './assets/outfits/forest-guide/front-left.webp';
 import frontRight from './assets/outfits/forest-guide/front-right.webp';
 import turntable from './assets/outfits/forest-guide/turntable.webp';
 
+import {costumeTransform,registration} from './CostumeRegistration';
+
 export const forestGuideViews={front,side:left,back,turntable};
 const views={front,left,right,back,frontLeft,frontRight};
 const target='M55 140Q51 92 79 73Q83 50 102 55L128 76Q134 54 149 51Q173 58 176 96L190 130 186 187 174 219 161 276H83L63 235 55 194Z';
@@ -65,12 +67,14 @@ export function ForestGuideArt({motion,windowPose,gesture,animate=true,angle,fra
    <image href={silhouette} width="240" height="310" clipPath={`url(#${key}-foot-${index})`}/>
   </g>;
  }
+ const fit=costumeTransform(registration.forest[view]);
  return <svg className="fox fox-costume fox-classic-model" viewBox="0 0 240 310" role="img" aria-label="刘看山 · 森林引路者"
   data-outfit-id={outfit.id} data-classic-garment={outfit.id} data-outfit-frame={frame} data-gesture={gesture}
   data-classic-angle={view==='left'||view==='right'?'side':view} data-window-pose={windowPose?.phase} data-window-side={windowPose?.side}
   data-animation={motion?.clip} data-animation-stage={motion?.stage} data-animation-facing={motion?.facing}
   data-animation-pose={motion?.stage==='hold'?'sit_hold':undefined} data-outfit-motion={walking?motion?.clip:undefined}>
   <g data-rig-pose={pose} aria-hidden="true" pointerEvents="none" transform={flip?'translate(240 0) scale(-1 1)':undefined}>
+   <g transform={fit}>
    <defs>
     {feet.map((d,index)=><clipPath key={index} id={`${key}-foot-${index}`}><path d={d}/></clipPath>)}
     <clipPath id={key+'-glove'}><path d={glove}/></clipPath>
@@ -86,12 +90,13 @@ export function ForestGuideArt({motion,windowPose,gesture,animate=true,angle,fra
     {rear&&<g className="costume-limb" transform={`translate(24 ${armReach-15}) rotate(${-77*weight+pull*21} 135 189)`}>
      <image href={right} width="240" height="310" clipPath={`url(#${key}-glove)`}/>
     </g>}
-    {raw?<image href={raw} width="394" height="394" x="-78" y="-111" filter={`url(#${key}-edge)`}/>:
+    {raw?<image href={raw} width="392" height="392" x="-77.4" y="-107.2" filter={`url(#${key}-edge)`}/>:
      <image href={silhouette} width="240" height="310" mask={coreMoved?`url(#${key}-body)`:undefined}/>}
+   </g>
    </g>
   </g>
   {paper&&<rect x="134" y="205" width="31" height="24" rx="4" fill="#e7d6ac" stroke="#8a785a" strokeWidth="3"/>}
   <ExpressionArt gesture={gesture}/>
-  <path className="fox-costume-hit fox-animation-hit" d={target} fill="transparent" aria-hidden="true"/>
+  <path className="fox-costume-hit fox-animation-hit" d={target} transform={fit} fill="transparent" aria-hidden="true"/>
  </svg>;
 }

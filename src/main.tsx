@@ -9,6 +9,7 @@ import{HomeRoom}from'./HomeRoom';
 import{ActorEventsContext,useActorAnimation}from'./ActorAnimation';
 import{HotList}from'./HotList';
 import{RoamingCompanion}from'./RoamingCompanion';
+import{MinesCompanion}from'./MinesCompanion';
 import{CompanionInvitation}from'./CompanionInvitation';
 import{checkOutfit,DEFAULT_OUTFIT,findOutfit,loadIdle}from'./outfits';import{ModelPanel}from'./ModelPanel';import{unwrap,type Question,type Favorite,type Garden,type ModelStatus,type HumanWeather,type Post,type SearchResponse,type CompanionChoice,type CompanionState}from'./types';import'./style.css';import{INITIAL_STATE,nextBehavior}from'./shared/behavior.mjs';
 import{feedingJourney,phaseLabels,type FeedingPhase}from'./feeding';
@@ -475,5 +476,6 @@ return <ActorEventsContext.Provider value={animation}><CompanionProvider appeara
  caveOutfit={wardrobe.unlocked?wardrobe.outfit:null} humanWeather={wardrobe.humanWeather} weatherUnlocked={wardrobe.unlocked} onError={setError}>{scene}{guideOpen&&<FirstRunGuide onClose={enterCamp => void closeGuide(enterCamp)} error={guideError} closing={guideClosing}/>}{caveReveal&&<CaveReveal onClose={resetCaveClicks}
   onPersonRevealed={()=>void receiveCaveGift(caveReveal.ticket)}/>}</CompanionProvider></ActorEventsContext.Provider>;
 }
-const standaloneCompanion=new URLSearchParams(location.search).get('companion')==='1';
-createRoot(document.getElementById('root')!).render(<React.StrictMode>{standaloneCompanion?<RoamingCompanion/>:<App/>}</React.StrictMode>);
+const query=new URLSearchParams(location.search);
+const standaloneCompanion=query.get('companion')==='1';
+createRoot(document.getElementById('root')!).render(<React.StrictMode>{query.get('mines')==='1'?<MinesCompanion/>:standaloneCompanion?<RoamingCompanion/>:<App/>}</React.StrictMode>);

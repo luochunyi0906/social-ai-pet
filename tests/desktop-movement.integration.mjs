@@ -6,6 +6,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {DEFAULT_PLACES} from '../src/shared/layout.mjs';
+import layout from '../desktop/pet-layout.json' with {type:'json'};
+import locomotion from '../desktop/locomotion.json' with {type:'json'};
+const {width,height,artX,artY}=layout.roam.standard;
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const profile=await mkdtemp(join(tmpdir(),'kanshan-movement-native-'));
@@ -28,7 +31,7 @@ try {
   return {camp,pet:pet?.getBounds(),visible:pet?.isVisible()};
  });
  const origin=DEFAULT_PLACES.fox;
- const home=({x,y})=>({x:x+origin.x,y:y+origin.y,width:92,height:135});
+ const home=({x,y})=>({x:x+origin.x-artX,y:y+origin.y-artY,width,height});
  const begin=await bounds();
  await actor.locator('.fox-animation-hit').waitFor();
  assert.deepEqual(await page.evaluate(()=>{
@@ -87,12 +90,12 @@ try {
 
  const hit=await actor.locator('.fox-animation-hit').boundingBox();
  assert.ok(hit);
- const far={x:work.x+work.width-115,y:work.y+work.height-150};
+ const far={x:work.x+work.width-width-6,y:work.y+work.height-height-6};
  const campPoint={x:Math.round(hit.x+hit.width/2),y:Math.round(hit.y+hit.height/2)};
- await drag(page,shifted.camp,campPoint,{x:far.x-origin.x,y:far.y-origin.y});
+ await drag(page,shifted.camp,campPoint,{x:far.x-origin.x+artX,y:far.y-origin.y+artY});
  const away=await bounds();
  assert.deepEqual(away.camp,shifted.camp);
- assert.deepEqual(away.pet,{...far,width:92,height:135});
+ assert.deepEqual(away.pet,{...far,width,height});
  assert.ok(Math.hypot(away.pet.x-home(away.camp).x,away.pet.y-home(away.camp).y)>work.width/2);
  assert.equal(await page.locator('.camp-shell').count(),0);
  const grip=await page.locator('.pet-camp-grip').boundingBox();
@@ -105,7 +108,9 @@ try {
  console.log('PASS 角色与营地手柄可分别拖动，松手未误展开');
 
  await playing(child,'act_run','left');
- await actor.locator('.fox-animation-hit').waitFor({timeout:7000});
+ const destination=home(reanchored.camp);
+ const trip=Math.hypot(away.pet.x-destination.x,away.pet.y-destination.y);
+ await actor.locator('.fox-animation-hit').waitFor({timeout:Math.ceil(trip/locomotion.classic.run.speed)+4500});
  const returned=await bounds();
  assert.deepEqual(returned.camp,reanchored.camp);
  assert.equal(returned.visible,false);

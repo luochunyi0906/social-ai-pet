@@ -112,10 +112,7 @@
 @media(prefers-reduced-motion:reduce){.fox[data-gesture],.fox[data-gesture] *{animation:none!important}}
 
 .fox-wardrobe-leaving {animation:fox-wardrobe-dissolve .14s ease-out both;pointer-events:none;}
-.fox-wardrobe-step-in {animation:fox-wardrobe-step-in .13s ease-out both;}
 @keyframes fox-wardrobe-dissolve {to{opacity:0;}}
-@keyframes fox-wardrobe-step-in {from{translate:0 2px;}to{translate:0 0;}}
 @media(prefers-reduced-motion:reduce){
  .fox-wardrobe-leaving {display:none;}
- .fox-wardrobe-step-in {animation:none;}
 }

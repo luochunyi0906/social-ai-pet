@@ -195,7 +195,7 @@ test('窗口移动统一取整，显示器事件不会取消绑定序列',async(
   assert.equal(view.windowPose.phase,'look');
   controller.reconcile();
   assert.equal(controller.special,true);
-  for(let i=0;i<45;i++)mock.timers.tick(16);
+  for(let i=0;i<64&&view.windowPose.phase!=='climb';i++)mock.timers.tick(16);
   assert.equal(view.windowPose.phase,'climb');
  }finally{controller.dispose();}
 });

@@ -2,6 +2,7 @@ const {execFile}=require('node:child_process');
 const {promisify}=require('node:util');
 const path=require('node:path');
 const run=promisify(execFile);
+const {roam}=require('./pet-layout.json');
 
 async function windowInfo(id){
  if(process.platform!=='darwin')throw Error('真实窗口互动支持 macOS。');
@@ -16,11 +17,15 @@ function windowPlan(target,display,size,side,form){
  const near=(a,b)=>Math.abs(a-b)<=12;
  if(near(target.width,bounds.width)&&near(target.height,bounds.height))return;
  const portrait=form==='fox'||form==='human';
- const grip=form==='human'?17:portrait?20:14;
+ const layout=form==='fox'?roam.fox:roam.standard;
+ const artX=(size.width-92)/2;
+ const artY=size.height===layout.height?layout.artY:0;
+ const routeHeight=form==='fox'?145:135;
+ const grip=(form==='human'?17:form==='fox'?13:14)+artX;
  const x=[target.x-size.width+grip,target.x+target.width-grip];
  const eligible=x.map(left=>left>=area.x+5&&left+size.width<=area.x+area.width-5);
- const top=target.y-size.height+14;
- const bottom=Math.min(target.y+target.height-size.height/2,area.y+area.height-size.height);
+ const top=target.y-routeHeight-artY+14;
+ const bottom=Math.min(target.y+target.height-routeHeight/2-artY,area.y+area.height-size.height);
  if(top<area.y+4||bottom-top<100)return;
  const chosen=side??(eligible[1]?1:0);
  if(!eligible[chosen])return;

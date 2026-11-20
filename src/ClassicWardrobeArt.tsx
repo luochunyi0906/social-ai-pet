@@ -11,6 +11,7 @@ import {animationFrame} from './shared/animation.mjs';
 import {characterMotion,useMotionTime} from './RigMath';
 import {ClassicMotionLimbs} from './ClassicMotionLimbs';
 import './costume-motion.css';
+import {costumeTransform,registration} from './CostumeRegistration';
 
 import front from './assets/wardrobe-designs/default/front-cutout.png';
 import side from './assets/wardrobe-designs/default/side-cutout.png';
@@ -64,6 +65,7 @@ function ClassicBaseArt({id='default',motion,windowPose,gesture,weather,raincoat
   reaching||walking||releasing?'side':'front';
  const mirrored=angle!==undefined?angle===270:
   reaching||releasing?windowPose?.side===0:view==='side'&&(windowPose?.facing??motion?.facing)==='right';
+ const fit=raincoat?costumeTransform(registration.classicRain[view]):undefined;
  const flipped=mirrored?'translate(240 0) scale(-1 1)':undefined;
  const limbs=view==='side'?{near:sideArm,far:sideArm,left:narrowLeg,right:narrowLeg}:
   {near:outerLeft,far:outerRight,left:leftLeg,right:rightLeg};
@@ -83,7 +85,7 @@ function ClassicBaseArt({id='default',motion,windowPose,gesture,weather,raincoat
   data-animation={motion?.clip} data-animation-frame={frameIndex===undefined?undefined:frameIndex+1} data-animation-stage={motion?.stage} data-animation-facing={motion?.facing}
   data-animation-pose={motion?.stage==='hold'?'sit_hold':undefined} data-outfit-motion={walking?motion?.clip:undefined}>
   <g transform={flipped}>
-   <svg x="-17" y="18" width="274" height="274" viewBox="0 0 256 256"
+   <svg transform={fit} x="-17" y="18" width="274" height="274" viewBox="0 0 256 256"
     className={`costume-rig${animate?' costume-rig-animate':''}`} data-rig-pose={pose} pointerEvents="none" aria-hidden="true" overflow="visible">
     <defs>
      {Object.entries(limbs).map(([part,d])=><clipPath key={part} id={`${key}-${part}`}><path d={d}/></clipPath>)}

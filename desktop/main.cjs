@@ -1,7 +1,7 @@
 const {app,BrowserWindow,ipcMain,dialog,shell,Menu,screen,powerMonitor,net}=require('electron');
 const path=require('node:path');const fs=require('node:fs/promises');const {randomUUID}=require('node:crypto');
 const {PET_SIZE,PANEL_SIZE,fitPet,fitPanel,defaultPet,petCenter,gazeNear}=require('./window-layout.cjs');
-const {places:{fox:foxOrigin}}=require('./pet-layout.json');
+const {places:{fox:foxOrigin},roam:roamLayout}=require('./pet-layout.json');
 const {preferences,validAppearance}=require('./window-preferences.cjs');
 const {outfitPreferences}=require('./outfit-preferences.cjs');
 const chatModel=require('./chat-model.cjs');
@@ -74,7 +74,8 @@ async function teachingCandidate(excluded,now){
 
 function mutate(fn){const next=queue.then(async()=>{const data=fn(await readStore());const target=storePath(),temp=target+'.'+randomUUID()+'.tmp';await fs.mkdir(path.dirname(target),{recursive:true});const h=await fs.open(temp,'wx',0o600);try{await h.writeFile(JSON.stringify(data));await h.sync();}finally{await h.close();}await fs.rename(temp,target);return data;});queue=next.catch(()=>{});return next;}
 const roamIPC=new Set(['roam-hit','roam-press','roam-chat','roam-ready','window-drag-start','window-drag-end','menu','listening-status','cheek-capture','knock-mode']);
-function check(event,name){const child=roam.child;const window=child&&event.sender===child.webContents&&roamIPC.has(name)?child:win;
+function check(event,name){const child=roam.child;const auxiliary=minesPanel&&!minesPanel.isDestroyed()&&event.sender===minesPanel.webContents&&name.startsWith('mines-');
+ const window=auxiliary?minesPanel:child&&event.sender===child.webContents&&roamIPC.has(name)?child:win;
  if(!window||event.sender!==window.webContents||event.senderFrame!==window.webContents.mainFrame)throw Error('无效调用来源。');
  return window===child;
 }
@@ -382,6 +383,62 @@ const roam=roaming({
   return child;
  }
 });
+let minesPanel,minesTarget,minesCalibration=false;
+const {outside}=require('./mines-window-placement.cjs');
+function minesPlacement(target,pose){
+ minesTarget=target;
+ const bounds=screen.getDisplayMatching({x:Math.round(target.x),y:Math.round(target.y),width:Math.round(target.width),height:Math.round(target.height)}).workArea;
+ const panelSize=minesCalibration?{width:306,height:475}:{width:252,height:248};
+ const panel=outside(target,bounds,panelSize.width,panelSize.height);
+ const layout=windowPrefs.get().appearance==='fox'?roamLayout.fox:roamLayout.standard;
+ const avoid=panel&&panel.y===Math.round(target.y)&&panel.x>target.x
+  ?{...target,width:panel.x+panel.width-target.x}
+  :panel&&panel.y===Math.round(target.y)&&panel.x<target.x?{...target,x:panel.x,width:target.x+target.width-panel.x}:target;
+ const pet=outside(avoid,bounds,layout.width,layout.height);
+ if(pet)roam.followGuest(pet,pose,avoid);
+ else roam.leaveGuest();
+ if(!panel){minesPanel?.hide();return;}
+ if(!minesPanel||minesPanel.isDestroyed()){
+  minesPanel=new BrowserWindow({...panel,show:false,frame:false,resizable:false,focusable:false,transparent:true,
+   backgroundColor:'#00000000',hasShadow:false,alwaysOnTop:true,skipTaskbar:true,acceptFirstMouse:true,
+   webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
+  const current=minesPanel;
+  current.webContents.setWindowOpenHandler(()=>({action:'deny'}));
+  current.webContents.on('will-navigate',event=>event.preventDefault());
+  current.webContents.on('did-finish-load',()=>{if(minesTarget)current.showInactive();});
+  void current.loadFile(path.join(__dirname,'../dist/index.html'),{query:{mines:'1'}});
+ }
+ const current=minesPanel.getBounds();
+ if(['x','y','width','height'].some(key=>current[key]!==panel[key]))minesPanel.setBounds(panel);
+ if(!minesPanel.isVisible()&&!minesPanel.webContents.isLoadingMainFrame())minesPanel.showInactive();
+}
+const mines=require('./mines-companion.cjs').minesCompanion({
+ settings:()=>windowPrefs.get().mines??{enabled:true},
+ save:value=>windowPrefs.update({mines:value}),
+ permitted:()=>Boolean(win?.isVisible?.()&&!win.isMinimized?.()&&!desktopBlocked&&surface==='pet'&&!nativeDrag&&!roam.dragging),
+ show:(target,details)=>minesPlacement(target,details?.pose),
+ hide:()=>{minesTarget=null;minesCalibration=false;minesPanel?.hide();roam.leaveGuest();},
+ permission:()=>sendWindowPlayNotice('扫雷陪玩需要屏幕录制权限。可在「模型与检索设置 → 扫雷陪玩」打开系统设置。'),
+ publish:state=>{
+  for(const window of [win,minesPanel])if(window&&!window.isDestroyed?.())window.webContents.send('mines-state',state);
+ },
+ explain:async(detail,question,signal)=>{
+  const config=chatConfiguration();
+  if(!config.ready)throw Error('当前聊天服务尚未配置，本地提示仍可用。');
+  const rules='按用户偏好选择解释语气。只输出「直说」或「比喻」二选一，禁止另作推理。JSON 服务时用 {"text":"直说","tone":"calm"}。';
+  const response=await localChat.complete([{role:'system',content:rules},{role:'user',content:rules+'\n'+JSON.stringify({detail,question})}],
+   {config,signal:AbortSignal.any([signal,AbortSignal.timeout(12000)])});
+  return response?.text?.trim()==='比喻'?'比喻':'直说';
+ }
+});
+handle('mines-status',mines.status);
+handle('mines-enable',async value=>{const prefs=mines.setEnabled(value);await windowPrefs.flush();return prefs.enabled;});
+handle('mines-mute',mines.mute);
+handle('mines-advice',mines.advise);
+handle('mines-explain',mines.ask);
+handle('mines-frame',()=>{const frame=mines.camera();minesCalibration=true;if(minesTarget)minesPlacement(minesTarget);return frame;});
+handle('mines-calibrate',async rect=>{mines.calibrate(rect);minesCalibration=false;if(minesTarget)minesPlacement(minesTarget);await windowPrefs.flush();return true;});
+handle('mines-permission',()=>shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture'));
 handle('roam-hit',(payload,child)=>{if(child&&typeof payload?.active==='boolean'&&payload.id===roamProbeId)roam.hit(payload.active);});
 handle('roam-ready',child=>{if(child)roam.visual();});
 handle('roam-press',(active,child)=>{
@@ -411,6 +468,7 @@ handle('roam-update',p=>{
  weather.setBlocked(weatherBlocked||roam.special||roam.dragging);
  roam.update({outfitId:p.outfitId,appearance:windowPrefs.get().appearance,sleeping:p.sleeping,action:p.action,motion,motionEnabled:p.motionEnabled,daydream:p.daydream===true,
   weather:weatherLook(),caveOutfit:costume(),humanWeather:humanCostume(),weatherUnlocked:windowPrefs.get().caveStickerReward===true,autoClimbBlocked:weatherBlocked},p.blocked);
+ mines.reconcile();
 });
 function ignore(value) {
  if(!win||ignoring===value)return;
@@ -471,6 +529,7 @@ function setSurface(value) {
  const before=win.getBounds();
  const saved=windowPrefs.get();
  surface=value;
+ mines.reconcile();
  setDeskKnock(false);
  roam.setPanel(value==='panel');
  captureUntil=0;lastProbe=null;ignore(false);
@@ -634,11 +693,14 @@ app.whenReady().then(async()=>{
  weather.configure(localWeather());
  listening.start();
  powerMonitor?.on('suspend',()=>{
+  mines.suspend(true);
   setDeskKnock(false);
   roam.suspend(true);
   for(const window of [win,roam.child])if(window&&!window.isDestroyed?.())window.webContents.send('suspend');
  });
- powerMonitor?.on('resume',()=>{roam.suspend(!win?.isVisible());void weather.refresh();});
+ powerMonitor?.on('resume',()=>{mines.suspend(false);roam.suspend(!win?.isVisible());void weather.refresh();});
+ powerMonitor?.on('lock-screen',()=>mines.suspend(true));
+ powerMonitor?.on('unlock-screen',()=>mines.suspend(false));
  roam.configure(windowPrefs.get().wander??DEFAULT_WANDER);
  const primary=screen?.getPrimaryDisplay?.().workArea;
  const saved=windowPrefs.get().pet;
@@ -660,10 +722,10 @@ app.whenReady().then(async()=>{
  win.webContents.on('will-navigate',e=>e.preventDefault());
  win.webContents.session.setPermissionRequestHandler((_w,_p,cb)=>cb(false));
  const visible=value=>win.webContents.send('window-visibility',value);
- win.on('close',()=>{finishDrag();roam.dispose();stop();});
+ win.on('close',()=>{mines.stop();finishDrag();roam.dispose();stop();});
  win.on('blur',()=>{captureUntil=0;finishDrag();roam.press(false);});
- win.on('hide',()=>{finishDrag();roam.suspend(true);stop();visible(false);win.webContents.send('suspend');});
- win.on('minimize',()=>{setDeskKnock(false);finishDrag();roam.suspend(true);visible(false);});
+ win.on('hide',()=>{mines.reconcile();finishDrag();roam.suspend(true);stop();visible(false);win.webContents.send('suspend');});
+ win.on('minimize',()=>{mines.reconcile();setDeskKnock(false);finishDrag();roam.suspend(true);visible(false);});
  win.on('restore',()=>{roam.suspend(false);visible(true);});
  win.on('show',()=>{roam.suspend(false);visible(true);});
  win.on('focus',()=>visible(true));
@@ -681,6 +743,7 @@ app.whenReady().then(async()=>{
   if(quitting)return;
   quitting=true;
   event.preventDefault();
+  mines.stop();
   roam.dispose();
   weather.stop();
   listening.stop();
@@ -694,6 +757,7 @@ app.whenReady().then(async()=>{
   {label:'编辑',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]}
  ]);
  Menu.setApplicationMenu(menu);
+ if(screen?.getPrimaryDisplay)mines.start();
  if(screen?.getCursorScreenPoint){
   probeTimer=setInterval(()=>{
    roam.probe(++roamProbeId);

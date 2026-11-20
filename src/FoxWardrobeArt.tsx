@@ -21,21 +21,23 @@ export async function prepareFoxWardrobe(id:string){
  }));
 }
 
-export function FoxWardrobePortrait({src,outfit,animate,mirror,x,y,width,height}:{
- src:string;outfit?:string;animate:boolean;mirror?:string;x:number;y:number;width:number;height:number;
+export function FoxWardrobePortrait({src,outfit,animate,mirror,fit,x,y,width,height}:{
+ src:string;outfit?:string;animate:boolean;mirror?:string;fit?:string;x:number;y:number;width:number;height:number;
 }){
- const previous=useRef({src,outfit});
- const [leaving,setLeaving]=useState<string>();
+ const current={src,outfit,fit};
+ const previous=useRef(current);
+ const [leaving,setLeaving]=useState<typeof current>();
  useLayoutEffect(()=>{
   const old=previous.current;
-  previous.current={src,outfit};
+  previous.current={src,outfit,fit};
   if(!animate||old.src===src||old.outfit===outfit){setLeaving(undefined);return;}
-  setLeaving(old.src);
+  setLeaving(old);
   const timeout=setTimeout(()=>setLeaving(undefined),144);
   return ()=>clearTimeout(timeout);
- },[src,outfit,animate]);
+ },[src,outfit,fit,animate]);
  return <g transform={mirror}>
-  <image href={src} x={x} y={y} width={width} height={height}/>
-  {leaving&&<image key={leaving} className="fox-wardrobe-leaving" href={leaving} x={x} y={y} width={width} height={height}/>}
+  <image href={src} transform={fit} x={x} y={y} width={width} height={height}/>
+  {leaving&&<image key={leaving.src} className="fox-wardrobe-leaving" href={leaving.src} transform={leaving.fit}
+   x={x} y={y} width={width} height={height}/>}
  </g>;
 }

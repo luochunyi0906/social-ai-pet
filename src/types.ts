@@ -63,7 +63,7 @@ export type WeatherSettings={enabled:boolean;city:string;chase:boolean};
 export type WeatherStatus={prefs:WeatherSettings;look:WeatherLook;observation?:{time:number;feels?:number;temperature?:number};problem?:string};
 export type WindowRelease={from:'climb'|'pull';elapsed:number};
 export type WindowPose={phase:string;side:0|1;facing?:'left'|'right';since?:number;speed?:number;release?:WindowRelease};
-export type RoamView={outfitId:string;appearance?:PetAppearance;sleeping:boolean;action:string;motion?:ActorMotion;motionEnabled?:boolean;walkingGif?:boolean;daydream?:boolean;windowPose?:WindowPose;weather?:WeatherLook;caveOutfit?:string|null;humanWeather?:HumanWeather|null;weatherUnlocked?:boolean};
+export type RoamView={guestPose?:'curious'|'thinking'|'happy'|'surprised';foxLift?:boolean;outfitId:string;appearance?:PetAppearance;sleeping:boolean;action:string;motion?:ActorMotion;motionEnabled?:boolean;walkingGif?:boolean;daydream?:boolean;windowPose?:WindowPose;weather?:WeatherLook;caveOutfit?:string|null;humanWeather?:HumanWeather|null;weatherUnlocked?:boolean};
 export type ChatState={activeId:string;sessions:{id:string;createdAt:string}[];turns:ChatTurn[];opening?:CompanionOpening};
 export type ChatRequest={id:string;messageId:string;sessionId:string;message?:string;consent:boolean;configId:string;sourceId?:string;stream?:boolean};
 export type ChatResult={state:ChatState;reply?:{text:string;tone:string}};
@@ -96,7 +96,11 @@ export type Bridge={
  weatherStatus:()=>Promise<Result<WeatherStatus>>;
  saveWeather:(settings:WeatherSettings)=>Promise<Result<WeatherStatus>>;
  refreshWeather:()=>Promise<Result<WeatherStatus>>;
- onWeather:(fn:(state:WeatherStatus)=>void)=>()=>void;
+ minesStatus:()=>Promise<Result<MinesState>>;minesEnable:(enabled:boolean)=>Promise<Result<boolean>>;
+ onMines:(handler:(state:MinesState)=>void)=>()=>void;minesMute:()=>Promise<Result<boolean>>;
+ minesAdvice:(level:1|2|3)=>Promise<Result<MinesState>>;minesExplain:(payload:{consent:boolean;question:string})=>Promise<Result<string>>;
+ minesFrame:()=>Promise<Result<{image:string}>>;minesCalibrate:(rect:MinesRect)=>Promise<Result<boolean>>;
+ minesPermission:()=>Promise<Result<void>>;onWeather:(fn:(state:WeatherStatus)=>void)=>()=>void;
  wardrobeStatus:()=>Promise<Result<{unlocked:boolean;outfit:string|null;humanWeather:HumanWeather|null;hintSeen:boolean}>>;
  saveCaveOutfit:(id:string|null)=>Promise<Result<string|null>>;
  saveHumanWeather:(id:HumanWeather|null)=>Promise<Result<HumanWeather|null>>;
@@ -148,6 +152,12 @@ export type Bridge={
  setSnow:(enabled:boolean)=>Promise<Result<{snow:boolean}>>;
  onWindowVisibility:(fn:(visible:boolean)=>void)=>()=>void;
  zhihuQuota:(p:{id:string;consent:boolean;configId:string})=>Promise<Result<ZhihuQuota>>;gardenAction:(p:GardenAction)=>Promise<Result<Garden>>;openSearchConfig:()=>Promise<Result<boolean>>;searchStatus:()=>Promise<Result<SearchStatus>>;searchPosts:(p:{id:string;query:string;consent:boolean;configId:string})=>Promise<Result<SearchResponse>>;openPost:(url:string)=>Promise<Result<boolean>>;surface:(mode:'pet'|'panel')=>Promise<Result<boolean>>;guideSeen:()=>Promise<Result<boolean>>;hitTest:(p:{id:number;active:boolean})=>Promise<Result<boolean>>;capture:(active:boolean)=>Promise<Result<boolean>>;menu:()=>Promise<Result<boolean>>;onProbe:(fn:(p:{id:number;x:number;y:number})=>void)=>()=>void;onAction:(fn:(name:string)=>void)=>()=>void;status:()=>Promise<Result<ModelStatus>>;refreshConfig:()=>Promise<Result<ModelStatus>>;checkModel:(p:{id:string;consent:boolean;configId:string})=>Promise<Result<ConnectionCheck>>;dropFile:(file:File)=>Promise<Result<{token:string;name:string}>>;forgetFile:()=>Promise<Result<boolean>>;chooseFile:()=>Promise<Result<{token:string;name:string}|null>>;process:(p:{id:string;consent:boolean;mode:'sample'|'model';text?:string;fileToken?:string;configId?:string})=>Promise<Result<{questions:Question[];simulated:boolean}>>;cancel:(id:string)=>Promise<Result<boolean>>;load:()=>Promise<Result<Garden>>;save:(p:{kind:Favorite['kind'];title:string;keywords:string;simulated:boolean;resultId?:string})=>Promise<Result<Garden&{favoriteCreated:boolean}>>;update:(p:{id:string;action:'hide'|'delete'})=>Promise<Result<Garden>>;open:(words:string)=>Promise<Result<boolean>>;control:(command:string)=>Promise<Result<boolean>>;onSuspend:(fn:()=>void)=>()=>void};
+export type MinesRect={x:number;y:number;width:number;height:number};
+export type MinesHint={text:string;clues:number[];area:number[];cell?:number;kind?:'mine'|'safe'};
+export type MinesState={status:'idle'|'paused'|'ready'|'locating'|'permission'|'calibration'|'muted'|'disabled';
+ enabled:boolean;needsPermission?:boolean;result?:'lost'|'won';review?:boolean;rows?:number;columns?:number;opened?:number;flags?:number;notice?:string;
+ board?:Array<number|'hidden'|'flag'|'?'>;hint?:MinesHint;level?:number;turn?:number;explanation?:string};
+
 declare global{interface Window{kanshan?:Bridge}}
 export type RecommendationMode='account'|'topic';
 export type RecommendationBatch={mode:RecommendationMode;query?:string;count:number;retrievedAt:string;items:Post[]};

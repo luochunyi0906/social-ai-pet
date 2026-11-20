@@ -1,10 +1,9 @@
 const {fitPanel,gazeNear}=require('./window-layout.cjs');
 const {chooseWindowRoute,nearbyWindowPlan,windowFocusTracker}=require('./window-target.cjs');
 const {dropTime,fallingPosition}=require('./window-drop.mjs');
-const SIZE={width:92,height:135};
-const FOX_SIZE={width:108,height:145};
-const {places:{fox:DESKTOP_ORIGIN}}=require('./pet-layout.json');
-const FOX_PADDING=7;
+const {roam:ROAM_LAYOUT,places:{fox:DESKTOP_ORIGIN}}=require('./pet-layout.json');
+const layouts=Object.fromEntries(Object.entries(ROAM_LAYOUT).map(([name,{width,height,artX,artY}])=>
+ [name,{size:{width,height},artX,artY}]));
 const IDLE_MS=15000;
 const locomotion=require('./locomotion.json');
 const AUTO_CLIMB={reach:38,movingScan:550,idleScan:1000,recheck:60,cooldown:20000};
@@ -23,22 +22,30 @@ function wanderSettings({enabled,scope='desktop',interval,distance,dwell}){
 
 function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=Math.random,readWindow,planWindow,notify=()=>{}}){
  let child,detached=false,held=false,drag,campMoving=false,suspended=false,blocked=false,panel=false,menu=false,knocking=false,position;
- let task;
+ let task,liftRoom=false,liftRelease,guest,guestPose,guestTimer;
  let nearby,nearbyPending=false,scanAt=0,checkAt=0,autoAfter=0;
  let wander=DEFAULT_WANDER;
  let appearance={outfitId:'default',sleeping:false,action:'observe'};
  const pace=()=>locomotion[appearance.appearance]??locomotion.classic;
- const size=()=>appearance.appearance==='fox'?FOX_SIZE:SIZE;
- const desktopOrigin=()=>({...DESKTOP_ORIGIN,x:DESKTOP_ORIGIN.x-(appearance.appearance==='fox'?FOX_PADDING:0)});
+ const layout=()=>appearance.appearance==='fox'?(liftRoom?layouts.foxLift:layouts.fox):layouts.standard;
+ const size=()=>layout().size;
+ const desktopOrigin=()=>{
+  const {artX,artY}=layout();
+  return {x:DESKTOP_ORIGIN.x-artX,y:DESKTOP_ORIGIN.y-artY};
+ };
  const home=()=>{
   const position=anchor();
-  return {...position,x:position.x+(desktopOrigin().x-DESKTOP_ORIGIN.x)};
+  const {artX,artY}=layout();
+  const frame={...position,x:position.x-artX,y:position.y-artY,...size()};
+  return fitPanel(frame,workArea(frame));
  };
  const point=()=>child?.getBounds()??position??home();
  const workArea=box=>area({x:Math.round(box.x+size().width/2),y:Math.round(box.y+size().height/2)});
  const available=()=>!held&&!drag&&!campMoving&&!blocked&&!suspended&&!panel&&!menu&&!knocking;
  function visual(){
   const view={...appearance,action:drag?'lift':task?.motion?'walk':appearance.action==='walk'?'observe':appearance.action};
+  if(liftRoom)view.foxLift=true;
+  if(guest){view.daydream=false;view.guestPose=guestPose;}
   if(drag||held||task?.motion||task?.kind==='window'||blocked||panel||suspended)view.daydream=false;
   if(task?.motion)view.motion=task.motion;
   if(task?.walkingGif)view.walkingGif=true;
@@ -72,8 +79,27 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   position={...target,x,y};
   if(child&&!child.isDestroyed())child.setPosition(x,y);
  }
+ function fitLayout(previous){
+  const next=layout();
+  if(!child||child.isDestroyed()||previous===next)return;
+  const here=point();
+  const bounds={...here,x:here.x+previous.artX-next.artX,y:here.y+previous.artY-next.artY,...next.size};
+  position=fitPanel(bounds,workArea(bounds));
+  child.setBounds(position);
+ }
+ function setLiftRoom(value){
+  const previous=layout();
+  liftRoom=value;
+  fitLayout(previous);
+ }
+ function clearLiftRoom(){
+  clearTimeout(liftRelease);
+  liftRelease=undefined;
+  setLiftRoom(false);
+ }
  function dock(){
   stopTask();
+  clearLiftRoom();
   detached=false;position=undefined;
   child?.hide();
   visual();
@@ -107,6 +133,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
  function startReturn(stroll=false){
   if(!available()||!detached)return;
   if(!child||child.isDestroyed())return dock();
+  if(liftRoom)clearLiftRoom();
   const here=point(),destination=home();
   const clip=Math.hypot(destination.x-here.x,destination.y-here.y)>workArea(destination).width/2?'act_run':'act_walk';
   animate(destination,'return',clip,dock,undefined,stroll&&clip==='act_walk');
@@ -135,7 +162,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   return candidates[Math.floor(random()*candidates.length)];
  }
  function startStroll(){
-  if(!available()||detached||!wander.enabled)return;
+  if(!available()||guest||detached||!wander.enabled)return;
   const origin=home(),bounds=workArea(origin);
   const fullDesktop=wander.scope==='desktop';
   const target=fullDesktop?desktopDestination(origin,areas?.()??[bounds]):nearbyDestination(origin,bounds);
@@ -147,7 +174,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   },fullDesktop?undefined:bounds);
  }
  const startPoint=()=>detached?point():home();
- const canAutoClimb=()=>available()&&!appearance.autoClimbBlocked&&
+ const canAutoClimb=()=>available()&&!guest&&!liftRoom&&!appearance.autoClimbBlocked&&
   task?.kind!=='window'&&task?.kind!=='chase'&&Date.now()>=autoAfter;
  function scanNearby(){
   if(!readWindow||!planWindow||!canAutoClimb())return;
@@ -167,10 +194,10 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   if(route)startWindow(nearby.snapshot,route,start,form,true);
  }
  async function playWindow(){
-  if(!available())return '请先回到普通桌面模式，再让刘看山去窗口边上玩。';
+  if(!available()||guest||liftRoom)return '请先回到普通桌面模式，再让刘看山去窗口边上玩。';
   if(!readWindow||!planWindow||task?.kind==='window'||task?.kind==='chase')return '当前无法进入窗口互动。';
   const snapshot=await readWindow();
-  if(!available()||task?.kind==='window'||task?.kind==='chase')
+  if(!available()||guest||liftRoom||task?.kind==='window'||task?.kind==='chase')
    return '角色当前无法开始窗口互动。';
   const form=appearance.appearance;
   const start=startPoint();
@@ -287,8 +314,40 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   sequence.timer=setInterval(frame,16);
   visual();
  }
+ function followGuest(bounds,pose,protectedWindow){
+  if(!available()||liftRoom)return;
+  const target={...bounds,...size()};
+  if(guest&&guest.x===target.x&&guest.y===target.y&&!pose)return;
+  const changed=!guest||guest.x!==target.x||guest.y!==target.y;
+  const first=!guest;
+  guest=target;
+  if(pose){
+   guestPose=pose;
+   clearTimeout(guestTimer);
+   guestTimer=setTimeout(()=>{guestPose=undefined;visual();},1100);
+  }
+  if(changed){
+   stopTask();
+   detachAt(home());
+   const from=point();
+   const outsideHorizontally=protectedWindow&&(Math.max(from.x,target.x)+target.width<=protectedWindow.x||
+    Math.min(from.x,target.x)>=protectedWindow.x+protectedWindow.width);
+   const outsideVertically=protectedWindow&&(Math.max(from.y,target.y)+target.height<=protectedWindow.y||
+    Math.min(from.y,target.y)>=protectedWindow.y+protectedWindow.height);
+   if(first&&(outsideHorizontally||outsideVertically)&&Math.hypot(from.x-target.x,from.y-target.y)<250){
+    animate(target,'guest','act_walk',visual,workArea(target));
+   }else move(target);
+  }
+  visual();
+ }
+ function leaveGuest(){
+  if(!guest)return;
+  clearTimeout(guestTimer);
+  guest=guestPose=undefined;
+  dock();
+ }
  function chase(){
-  if(!available()||task?.kind==='window'||task?.kind==='chase')return;
+  if(!available()||guest||liftRoom||task?.kind==='window'||task?.kind==='chase')return;
   stopTask();
   detachAt(home());
   const until=Date.now()+4000;
@@ -307,6 +366,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   task=next;visual();
  }
  function arm(){
+  if(guest)return;
   if(stopTask())visual();
   if(!available())return;
   if(detached)wait('manual-wait',delay,startReturn);
@@ -345,18 +405,24 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
  }
  function sample(){
   const p=cursor();
-  move(fitPanel({x:p.x-drag.x,y:p.y-drag.y,...size()},area(p)));
+  const {artX,artY}=layout();
+  move(fitPanel({x:p.x-drag.x-artX,y:p.y-drag.y-artY,...size()},area(p)));
  }
  function start(payload,fromChild){
   if(drag||campMoving||suspended||detached!==fromChild||!Number.isFinite(payload.x)||!Number.isFinite(payload.y))return false;
   const origin=fromChild?{x:0,y:0}:desktopOrigin();
   if(payload.x<origin.x||payload.x>origin.x+size().width||payload.y<origin.y||payload.y>origin.y+size().height)return false;
+  if(guest){clearTimeout(guestTimer);guest=guestPose=undefined;}
   stopTask();held=false;
   detachAt(home());
   const overlay=window();
   overlay.setIgnoreMouseEvents(!fromChild,{forward:true});
   if(!overlay.webContents.isLoadingMainFrame())overlay.showInactive();
-  drag={x:payload.x-origin.x,y:payload.y-origin.y,timer:setInterval(sample,16),watchdog:setTimeout(()=>finish(false),45000)};
+  const {artX,artY}=layout();
+  // Keep the pressed point in art coordinates when the transparent window expands.
+  drag={x:payload.x-origin.x-artX,y:payload.y-origin.y-artY,timer:setInterval(sample,16),watchdog:setTimeout(()=>finish(false),45000)};
+  clearTimeout(liftRelease);
+  if(appearance.appearance==='fox')setLiftRoom(true);
   sample();visual();
   return true;
  }
@@ -365,6 +431,10 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
   if(finalSample)sample();
   clearInterval(drag.timer);clearTimeout(drag.watchdog);drag=undefined;
   if(child&&!child.isDestroyed())child.setIgnoreMouseEvents(true,{forward:true});
+  if(liftRoom)liftRelease=setTimeout(()=>{
+   clearLiftRoom();
+   visual();
+  },ROAM_LAYOUT.foxLift.settleMs);
   visual();arm();
   return true;
  }
@@ -380,7 +450,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
  function suspend(value){
   if(suspended===value)return;
   suspended=value;
-  if(value){held=false;finish(false);child?.hide();}
+  if(value){held=false;finish(false);clearLiftRoom();child?.hide();visual();}
   else if(detached)child?.showInactive();
   arm();
  }
@@ -397,22 +467,20 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
  }
  return {
   get child(){return child;},get away(){return detached;},get dragging(){return !!drag;},
-  playWindow,scanNearby,chase,stopChase(){if(task?.kind==='chase'){arm();visual();}},get special(){return task?.kind==='window'||task?.kind==='chase';},
+  followGuest,leaveGuest,playWindow,scanNearby,chase,stopChase(){if(task?.kind==='chase'){arm();visual();}},get special(){return task?.kind==='window'||task?.kind==='chase';},
   start,finish,beginCampDrag,endCampDrag,press,block,suspend,probe,visual,
   setKnockMode(value){if(knocking!==value){knocking=value;arm();}},
   setPanel(value){if(panel!==value){panel=value;arm();}},
   setMenu(value){if(menu!==value){menu=value;if(task?.kind!=='window')arm();}},
   configure(value){wander=wanderSettings(value);arm();},
   update(view,stop){
-   const previousSize=size();
+   const previous=layout();
    appearance=view;
-   if(child&&!child.isDestroyed()&&previousSize!==size()){
-    const here=point();
-    const offset=size()===FOX_SIZE?-FOX_PADDING:FOX_PADDING;
-    const bounds=fitPanel({...here,x:here.x+offset,...size()},workArea(here));
-    child.setBounds(bounds);
-    position=bounds;
-   }
+   if(appearance.appearance!=='fox'){
+    clearTimeout(liftRelease);
+    liftRoom=false;
+   }else if(drag)liftRoom=true;
+   fitLayout(previous);
    block(stop);visual();
   },
   hit(active){if(child&&!suspended&&!held&&!drag&&!menu)child.setIgnoreMouseEvents(!active,{forward:true});},
@@ -430,7 +498,7 @@ function roaming({create,anchor,cursor,area,areas,publish,delay=IDLE_MS,random=M
    }
    arm();
   },
-  dispose(){suspended=true;finish(false);stopTask();child?.destroy();}
+  dispose(){suspended=true;clearTimeout(guestTimer);guest=guestPose=undefined;finish(false);clearLiftRoom();stopTask();child?.destroy();}
  };
 }
 module.exports={roaming,DEFAULT_WANDER,validWander,wanderSettings};

@@ -13,6 +13,13 @@ const position = value => value && Number.isInteger(value.x) && Number.isInteger
  && Math.abs(value.x)<100000 && Math.abs(value.y)<100000;
 const dimensions = value => Number.isInteger(value.width) && Number.isInteger(value.height)
  && value.width>0 && value.height>0 && value.width<=12000 && value.height<=12000;
+function minesPrefs(value){
+ if(typeof value?.enabled!=='boolean')return undefined;
+ const rect=value.calibration;
+ const valid=rect&&['x','y','width','height'].every(key=>Number.isFinite(rect[key]))&&
+  rect.x>=0&&rect.y>=0&&rect.width>=.2&&rect.height>=.2&&rect.x+rect.width<=1&&rect.y+rect.height<=1;
+ return {enabled:value.enabled,...(valid?{calibration:{x:rect.x,y:rect.y,width:rect.width,height:rect.height}}:{})};
+}
 function normalize(value) {
  if(value?.version!==1)return {...defaults};
  const pet=position(value.pet)?{x:value.pet.x,y:value.pet.y}:null;
@@ -27,6 +34,7 @@ function normalize(value) {
   ...(typeof value.humanWeather==='string'&&Object.hasOwn(humanWeather,value.humanWeather)?{humanWeather:value.humanWeather}:{}),
   ...(validWeather(value.weather)?{weather:{enabled:value.weather.enabled,city:value.weather.city,chase:value.weather.chase===true}}:{}),
   ...(validWander(value.wander)?{wander:wanderSettings(value.wander)}:{}),
+  ...(minesPrefs(value.mines)?{mines:minesPrefs(value.mines)}:{}),
   ...(typeof value.chatStickers==='boolean'?{chatStickers:value.chatStickers}:{})};
 }
 function preferences(directory) {

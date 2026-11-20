@@ -35,10 +35,8 @@
 .appearance-options img {width:100%;height:100%;object-fit:contain;}
 .appearance-classic {margin-top:8px;}
 .fox-appearance {overflow:visible;}
-.pet-fox > .fox-appearance {filter:drop-shadow(0 1px 1px #253c2670);}
 .pet-fox:has(> [data-pet-appearance="fox"]) .pet-contact {top:129px;}
 .pet-fox:has(> [data-pet-appearance="fox"]) .pet-caption-context {margin-top:16px;}
-.roam-character.roam-fox-form {left:7px;}
 .cave-entrance {
  display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:4px 8px;
  border:1px solid #cfbb91;border-radius:8px;background:#fcf1d8;color:#4d5539;

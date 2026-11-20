@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { WeatherLook } from './types';
 import timings from '../desktop/locomotion.json';
+import {foxStripTransform} from './CostumeRegistration';
 import {foxWardrobeArt} from './FoxWardrobeArt';
 import walkRight from './assets/cave/motion/walk-right.webp';
 import walkLeft from './assets/cave/motion/walk-left.webp';
@@ -26,21 +27,22 @@ const pending = new Map<string, Promise<void>>();
 function motionArt(movement: FoxMovement, facing: Facing, clothing?: WeatherLook['clothing'], glasses = false, wardrobe?:string) {
  if(movement==='perch'){
   const url=foxWardrobeArt(wardrobe,'perch');
-  return url?{url,glasses:undefined,frames:8,period:1120}:undefined;
+  return url?{url,glasses:undefined,frames:8,period:1120,fit:foxStripTransform(wardrobe+'-perch')}:undefined;
  }
  const strip = strips[movement];
  const pose = movement === 'climb' ? movement : `${movement}-${facing}` as const;
  if(wardrobe){
   const url=foxWardrobeArt(wardrobe,pose);
-  return url?{url,glasses:undefined,frames:strip.frames,period:strip.period}:undefined;
+  const frames=wardrobe==='rain'&&movement==='walk'?8:strip.frames;
+  return url?{url,glasses:undefined,frames,period:strip.period,fit:foxStripTransform(wardrobe+'-'+pose)}:undefined;
  }
  const outfit = clothing === 'hot' ? 'heat' : undefined;
  const dressed = outfit && weatherStrips[`./assets/cave/weather/motion/${outfit}-${pose}.webp`];
  const lenses = glasses && movement !== 'climb' ? weatherStrips[`./assets/cave/weather/motion/sun-${pose}.webp`] : undefined;
  if (movement === 'run' && (dressed || lenses)) {
-  return { url: dressed || (facing === 'left' ? sunRunLeft : sunRunRight), glasses: lenses, frames: 14, period: timings.fox.run.cycle };
+  return { url: dressed || (facing === 'left' ? sunRunLeft : sunRunRight), glasses: lenses, frames: 14, period: timings.fox.run.cycle, fit:foxStripTransform((dressed?'heat':'sun')+'-'+pose) };
  }
- return { url: dressed || strip[facing], glasses: lenses, frames: strip.frames, period: strip.period };
+ return { url: dressed || strip[facing], glasses: lenses, frames: strip.frames, period: strip.period, fit:foxStripTransform(dressed?'heat-'+pose:undefined) };
 }
 
 function load(url: string) {
@@ -82,18 +84,18 @@ export function useFoxMovement(movement?: FoxMovement, facing: Facing = 'right',
  return { ...strip, glasses: lenses && ready.has(lenses) ? lenses : undefined };
 }
 
-export function FoxMotionStrip({ url, glasses, frames, period, animated, mirror, dressed }: {
- url: string; glasses?: string; frames: number; period: number; animated: boolean; mirror?: string; dressed?:boolean;
+export function FoxMotionStrip({ url, glasses, frames, period, animated, mirror, fit }: {
+ url: string; glasses?: string; frames: number; period: number; animated: boolean; mirror?: string; fit:string;
 }) {
  const style = { '--fox-frames': frames, '--fox-period': `${period}ms` } as CSSProperties;
- return <g transform={mirror} pointerEvents="none">
-  <svg className={`fox-motion-frame ${dressed&&animated?'fox-wardrobe-step-in':''}`} width="240" height="310" viewBox="0 0 240 310" aria-hidden="true">
+ return <g transform={mirror} pointerEvents="none"><g transform={fit}>
+  <svg className="fox-motion-frame" width="240" height="310" viewBox="0 0 240 310" aria-hidden="true">
    <g className={animated ? 'fox-motion-strip' : undefined} style={style}>
     <image href={url} width={240 * frames} height={310}/>
     {glasses && <image href={glasses} width={240 * frames} height={310}/>}
    </g>
   </svg>
- </g>;
+ </g></g>;
 }
 
 const leftLeg = 'M509 1245H658L652 1389H435V1316L454 1292Z';

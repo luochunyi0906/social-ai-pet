@@ -88,11 +88,11 @@ export function RestingBlanket({ outfitId = 'default' }: { outfitId?: string }) 
  </svg>;
 }
 
-export function Companion({ paper = false,gesture,cheek,faceEnabled,listening }: { action?: string; paper?: boolean;gesture?:PetGesture;cheek?:CheekPose;faceEnabled?:boolean;listening?:ListeningStatus }) {
+export function Companion({ paper = false,gesture,cheek,faceEnabled,listening,liftScale }: { action?: string; liftScale?:number; paper?: boolean;gesture?:PetGesture;cheek?:CheekPose;faceEnabled?:boolean;listening?:ListeningStatus }) {
  const { appearance, outfit, sleeping, frame, motion, daydream,weather,caveOutfit,humanWeather,weatherUnlocked,windowPose,motionEnabled } = useContext(AppearanceContext);
  if (sleeping && !outfit?.actions.sleep) return <RestingBlanket outfitId={outfit?.id}/>;
  if (appearance==='human'||appearance==='fox') return <AppearanceArt appearance={appearance} motion={motion} motionEnabled={motionEnabled}
-  windowPose={windowPose} daydream={daydream} weather={weather} caveOutfit={caveOutfit} humanWeather={humanWeather} weatherUnlocked={weatherUnlocked} gesture={gesture} cheek={cheek} faceEnabled={faceEnabled} listening={listening}/>;
+  liftScale={liftScale} windowPose={windowPose} daydream={daydream} weather={weather} caveOutfit={caveOutfit} humanWeather={humanWeather} weatherUnlocked={weatherUnlocked} gesture={gesture} cheek={cheek} faceEnabled={faceEnabled} listening={listening}/>;
  return <ClassicWardrobeArt id={outfit?.id} motion={motion} windowPose={windowPose} gesture={gesture}
   animate={motionEnabled} weather={weather} raincoat={!outfit&&weatherUnlocked&&weather?.umbrella} frame={outfit?(frame??idleFrame(outfit)):undefined}
   showcase={Boolean(outfit&&frame&&frame!==idleFrame(outfit))} paper={paper}/>;
