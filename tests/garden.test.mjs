@@ -81,6 +81,10 @@ test('透明小窗道具避免碰撞，刘看山锚点留给系统窗口拖动',
  assert.equal(placePiece(DEFAULT_PLACES,'fox',{x:200,y:80}).blocked,true);
  const actorOverlap=placePiece(DEFAULT_PLACES,'feed',{x:203,y:99});
  assert.equal(actorOverlap.blocked,true);
+ assert.equal(placePiece(DEFAULT_PLACES,'feed',{x:234,y:84}).blocked,true);
+ assert.equal(placePiece(DEFAULT_PLACES,'feed',{x:234,y:93}).blocked,false);
+ const edge=placePiece(DEFAULT_PLACES,'garden',{x:400,y:34});
+ assert.equal(edge.blocked,false);assert.equal(edge.places.garden.x,213);
  const moved=placePiece(DEFAULT_PLACES,'feed',{x:234,y:104});
  assert.equal(moved.blocked,false);assert.equal(moved.places.feed.x,234);
 });

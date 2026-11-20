@@ -16,7 +16,7 @@ const button=name=>page.getByRole('button',{name,exact:true});
 const companion=()=>page.locator('.desktop-pet .fox');
 const player=()=>page.locator('.cave-reveal video');
 const picker=()=>page.getByRole('group',{name:'刘看山的外貌'});
-const cave=()=>page.locator('.pet-cave .pet-caption');
+const cave=()=>page.locator('.pet-cave .pet-hit path');
 const portraitScale=svg=>svg.evaluate(node=>Math.abs(node.querySelector('image').getScreenCTM().a/node.getScreenCTM().a));
 const foxFits=svg=>svg.evaluate(node=>{
  const matrix=node.querySelector('image').getScreenCTM();
@@ -55,6 +55,7 @@ try{
  await start();
  assert.equal(await companion().getAttribute('data-pet-appearance'),null);
  await cave().click();
+ await page.getByRole('region',{name:'秘密基地',exact:true}).getByRole('button',{name:'探索桌',exact:true}).click();
  await picker().waitFor();
  assert.equal(await player().count(),0);
  await button('山洞入口').click();
@@ -91,25 +92,10 @@ try{
  await companion().and(page.locator('[data-pet-appearance="fox"]')).waitFor();
  assert.ok(Math.abs(await portraitScale(companion())-1.5)<1e-6);
  assert.equal(await foxFits(companion()),true);
- const labelLayout=await page.evaluate(()=>{
-  const box=selector=>document.querySelector(selector).getBoundingClientRect();
-  const actor=box('.pet-fox .fox-costume-hit');
-  const cave=box('.pet-cave .pet-caption');
-  const garden=box('.pet-garden .pet-caption');
-  const feed=box('.pet-feed .pet-caption');
-  const centerX=rect=>rect.left+rect.width/2;
-  return {
-   caveClear:actor.left-cave.right>=12&&centerX(cave)<centerX(box('.pet-cave .pet-art')),
-   gardenClear:garden.left-actor.right>=12&&centerX(garden)>centerX(box('.pet-garden .pet-art')),
-   feedClear:feed.left-actor.right>=10&&feed.top-box('.pet-feed .pet-art').bottom>=8,
-   labelsClickable:[cave,garden,feed].every(rect=>
-    document.elementFromPoint(centerX(rect),rect.top+rect.height/2)?.classList.contains('pet-caption'))
-  };
- });
- assert.deepEqual(labelLayout,{caveClear:true,gardenClear:true,feedClear:true,labelsClickable:true});
  if(process.env.KANSHAN_COMPACT_SCREENSHOT)await page.screenshot({path:process.env.KANSHAN_COMPACT_SCREENSHOT,omitBackground:true});
  await cave().click({trial:true});
- await page.locator('.pet-garden .pet-caption').click({trial:true});
+ await page.locator('.pet-garden .pet-hit path').click({trial:true});
+ await page.locator('.pet-feed .pet-hit path').click({trial:true});
  const dragPoint=await page.locator('.pet-fox .fox-costume-hit').evaluate(path=>{
   const point=new DOMPoint(118,220).matrixTransform(path.getScreenCTM());
   return {x:point.x,y:point.y};
@@ -129,7 +115,7 @@ try{
  assert.equal(saved.appearance,'fox');
  assert.equal(saved.snow,false);
  assert.equal(saved.chatStickers,false);
- console.log('PASS 两次点击播放、外貌重启恢复、人版 1 倍、狐狸版 1.5 倍及拖动显示');
+ console.log('PASS 桌面山洞直进秘密基地、探索桌彩蛋播放、外貌重启恢复与拖动显示');
 }finally{
  await app?.close();
  await rm(profile,{recursive:true,force:true});

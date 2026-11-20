@@ -206,14 +206,15 @@ try{
  for(const viewport of [[900,740],[720,620],[600,540]]){
   await app.evaluate(({BrowserWindow},size)=>BrowserWindow.fromId(1).setSize(...size),viewport);
   await page.waitForFunction(([width,height])=>innerWidth===width&&innerHeight===height,viewport);
-  const bench=btn('休息处，和刘看山聊聊');
+  const bench=btn('坐一会儿');
   const companion=btn('和刘看山互动，可双击打开聊天');
-  const benchBox=await bench.boundingBox();
+  const benchLabel=bench.getByText('坐一会儿');
+  const benchBox=await benchLabel.boundingBox();
   const companionBox=await companion.boundingBox();
   const costumeBox=await companion.locator('.fox-costume-hit').boundingBox();
   const gap=Math.min(companionBox.x,costumeBox.x)-benchBox.x-benchBox.width;
   assert.ok(benchBox.x>=0&&gap>=10,JSON.stringify({viewport,gap}));
-  await bench.click({trial:true});
+  await benchLabel.click({trial:true});
   await companion.click({trial:true});
   spacing.push({viewport,gapPx:Math.round(gap)});
   if(viewport[0]!==720)await snap('camp-bench-spacing-'+viewport.join('x'));

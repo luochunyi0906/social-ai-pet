@@ -32,8 +32,8 @@ try {
  const begin=await bounds();
  await actor.locator('.fox-animation-hit').waitFor();
  assert.deepEqual(await page.evaluate(()=>{
-  const label=document.querySelector('.pet-garden .pet-caption').getBoundingClientRect();
-  const points=[[5,5],[168,162],[label.x+label.width/2,label.y+label.height/2]];
+  const art=document.querySelector('.pet-garden .pet-hit path').getBoundingClientRect();
+  const points=[[5,5],[168,162],[art.x+art.width/2,art.y+art.height/2]];
   return points.map(([x,y])=>document.elementFromPoint(x,y)?.closest('[data-hit]')?.classList.contains('pet-ground-drag')??null);
  }),[null,true,false]);
 
@@ -109,9 +109,9 @@ try {
  const returned=await bounds();
  assert.deepEqual(returned.camp,reanchored.camp);
  assert.equal(returned.visible,false);
- const cave=page.locator('.pet-cave .pet-caption');
+ const cave=page.locator('.pet-cave .pet-hit path');
  await cave.click();
- await page.locator('.camp-shell').waitFor();
+ await page.getByRole('region',{name:'秘密基地',exact:true}).getByRole('button',{name:'探索桌',exact:true}).click();
  await page.getByRole('button',{name:'山洞入口',exact:true}).click();
  await page.getByRole('dialog',{name:'山洞换装间'}).waitFor();
  console.log('PASS 远距离面向营地逐帧跑回，归位采用新营地坐标，山洞仍可点击');

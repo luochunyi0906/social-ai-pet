@@ -30,8 +30,9 @@ async function visit(){
   app.focus({steal:true});
   BrowserWindow.fromId(1).show();
  });
- const cave=page.locator('.pet-cave .pet-caption');
+ const cave=page.locator('.pet-cave .pet-hit path');
  await cave.click();
+ await page.getByRole('region',{name:'秘密基地',exact:true}).getByRole('button',{name:'探索桌',exact:true}).click();
  assert.equal(await video().count(),0);
  await button('山洞入口').click();
  await video().waitFor();

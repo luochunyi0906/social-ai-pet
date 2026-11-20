@@ -5,8 +5,9 @@ const require=createRequire(import.meta.url),core=require('../desktop/core.cjs')
 async function launch(){app=await electron.launch({args:['.'],env:{...process.env,KANSHAN_DATA_DIR:dir,MODEL_API_KEY:'',MODEL_NAME:'',SEARCH_PROVIDER:'bing-rss'}});page=await app.firstWindow();
 await skipGuide(page);await page.waitForSelector('.desktop-pet');}
 try{await launch();assert.equal(await page.locator('.world').count(),0);assert.equal(await page.locator('.pet-piece').count(),4);mark('默认仅显示角色与道具，无常驻背景场景');
-const cave=page.locator('.pet-cave .pet-caption');
+const cave=page.locator('.pet-cave .pet-hit path');
 await cave.click();
+await page.getByRole('region',{name:'秘密基地',exact:true}).getByRole('button',{name:'探索桌',exact:true}).click();
 await page.getByRole('button',{name:'山洞入口',exact:true}).click();
 await page.getByRole('dialog',{name:'山洞换装间'}).getByRole('button',{name:'离开',exact:true}).click();
 await page.getByRole('button',{name:'投喂内容',exact:true}).click();assert.equal(await page.getByRole('button',{name:'开始本地模拟'}).isEnabled(),false);await page.getByRole('button',{name:'机器人信任样例'}).click();await page.locator('.consent input').check();await page.getByRole('button',{name:'开始本地模拟'}).click();await page.waitForSelector('.question-card');assert.equal(await page.locator('.question-card').count(),3);mark('逐次授权与模拟问题标记');
